@@ -28,7 +28,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.62);
+    _pageController = PageController(viewportFraction: 0.72);
     _pageController.addListener(() {
       setState(() => _page = _pageController.page ?? 0);
     });
@@ -81,7 +81,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
       barrierLabel: 'Coming Soon',
       barrierColor: TTColors.darkBrown.withValues(alpha: 0.35),
       transitionDuration: const Duration(milliseconds: 220),
-      pageBuilder: (context, anim, __) {
+      pageBuilder: (context, anim, _) {
         return Center(
           child: Material(
             color: Colors.transparent,
@@ -92,7 +92,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
           ),
         );
       },
-      transitionBuilder: (context, anim, __, child) {
+      transitionBuilder: (context, anim, _, child) {
         return FadeTransition(
           opacity: anim,
           child: ScaleTransition(
@@ -138,9 +138,9 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
                   onBack: () => context.pop(),
                   onSettings: _openParentGateSettings,
                 ),
-                const SizedBox(height: 18),
-                // const _TitleLockup(),
-                const SizedBox(height: 18),
+                // Clearance for the "Choose Your Family Member" banner that
+                // is baked into the background artwork.
+                const SizedBox(height: 56),
                 Expanded(
                   child: Stack(
                     alignment: Alignment.center,
@@ -152,7 +152,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
                         itemBuilder: (context, index) {
                           final character = familyCharacters[index];
                           final dist = (_page - index).abs();
-                          final scale = (1 - (dist * 0.12)).clamp(0.88, 1.0);
+                          final scale = (1 - (dist * 0.06)).clamp(0.94, 1.0);
                           final selected = dist < 0.5;
                           return Align(
                             alignment: Alignment.center,
@@ -170,14 +170,14 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
                         },
                       ),
                       Align(
-                        alignment: const Alignment(-1.02, 0),
+                        alignment: const Alignment(-0.96, 0),
                         child: _CarouselArrow(
                           icon: Icons.chevron_left_rounded,
                           onPressed: () => _flip(-1),
                         ),
                       ),
                       Align(
-                        alignment: const Alignment(1.02, 0),
+                        alignment: const Alignment(0.96, 0),
                         child: _CarouselArrow(
                           icon: Icons.chevron_right_rounded,
                           onPressed: () => _flip(1),
@@ -503,10 +503,14 @@ class _CounterPill extends StatelessWidget {
 // }
 
 // =====================================================================
-// CAROUSEL ARROW — gold circle button
+// CAROUSEL ARROW — chunky 3D gold circle with white chevron,
+// same construction as the back button (base + shadow + glossy face).
 // =====================================================================
 class _CarouselArrow extends StatelessWidget {
   const _CarouselArrow({required this.icon, required this.onPressed});
+
+  static const double _size = 54;
+  static const double _baseOffset = 4;
 
   final IconData icon;
   final VoidCallback onPressed;
@@ -516,22 +520,53 @@ class _CarouselArrow extends StatelessWidget {
     return BounceButton(
       onPressed: onPressed,
       semanticLabel: 'Flip carousel',
-      child: Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFC93C),
-          shape: BoxShape.circle,
-          border: Border.all(color: const Color(0xFFE8A317), width: 3),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x33000000),
-              blurRadius: 6,
-              offset: Offset(0, 3),
+      child: SizedBox(
+        width: _size,
+        height: _size + _baseOffset,
+        child: Stack(
+          children: [
+            Positioned(
+              top: _baseOffset,
+              left: 0,
+              child: Container(
+                width: _size,
+                height: _size,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0xFFC77C0E),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x33000000),
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              child: Container(
+                width: _size,
+                height: _size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFFFFD966), Color(0xFFFFB627)],
+                  ),
+                  border: Border.all(
+                    color: const Color(0xFFE8961A),
+                    width: 2.5,
+                  ),
+                ),
+                child: Icon(icon, size: 32, color: Colors.white),
+              ),
             ),
           ],
         ),
-        child: Icon(icon, size: 30, color: const Color(0xFF7A4E12)),
       ),
     );
   }
@@ -554,109 +589,146 @@ class CharacterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cardColor = Color(character.cardColorValue);
     final locked = !character.isUnlocked;
+    final ribbonColor = _ribbonColorFor(cardColor);
+    // "Age 0-2" for kids; plain label for grown-ups (Momo/Dodo).
+    final ageText = RegExp(r'^\d').hasMatch(character.ageLabel)
+        ? 'Age ${character.ageLabel}'
+        : character.ageLabel;
 
     return Center(
-      child: SizedBox(
-        width: 230,
-        height: 420, // taller so nothing gets cropped/squeezed
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white, // white card body, like the reference
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: Colors.white,
-              width: selected && !locked ? 6 : 5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.18),
-                blurRadius: 14,
-                offset: const Offset(0, 7),
-              ),
-            ],
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // ---- IMAGE SLOT ----
-                    SizedBox(
-                      height: 220,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: _CharacterImageSlot(
-                          character: character,
-                          locked: locked,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 26), // room for ribbon overlap
-                    Text(
-                      'Age ${character.subtitle}',
-                      textAlign: TextAlign.center,
-                      style: TTTypography.body(color: TTColors.darkBrown)
-                          .copyWith(fontWeight: FontWeight.w700, fontSize: 14),
-                    ),
-                    const SizedBox(height: 10),
-                    _UnlockPill(unlocked: !locked),
-                  ],
-                ),
-              ),
+      child: LayoutBuilder(
+        builder: (context, box) {
+          // Reference proportions: card is ~1.58x taller than wide, and the
+          // illustration fills the top ~62% with the ribbon on the seam.
+          final maxW = box.maxWidth - 16;
+          final hLimit = (box.maxHeight - 8) / 1.58;
+          final w = maxW < hLimit ? maxW : hLimit;
+          final h = w * 1.58;
+          const pad = 10.0;
+          const ribbonH = 44.0;
+          final imageH = (h - pad * 2) * 0.62;
 
-              // ---- RIBBON: overlaps the bottom edge of the image ----
-              Positioned(
-                top: 220 + 10 - 18, // imageHeight + topPadding - half ribbon height
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: _RibbonBanner(
-                    text: character.name,
-                    color: _ribbonColorFor(cardColor),
+          return SizedBox(
+            width: w,
+            height: h,
+            child: Container(
+              decoration: BoxDecoration(
+                // Soft character-tinted body, like the reference.
+                color: Color.alphaBlend(
+                  cardColor.withValues(alpha: 0.18),
+                  Colors.white,
+                ),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: Colors.white,
+                  width: selected && !locked ? 6 : 5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.22),
+                    blurRadius: 18,
+                    offset: const Offset(0, 10),
                   ),
-                ),
+                ],
               ),
-
-              if (locked)
-                Positioned(
-                  top: -8,
-                  right: -6,
-                  child: Transform.rotate(
-                    angle: 0.18,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEF6C4D),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x33000000),
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(pad),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // ---- IMAGE SLOT ----
+                        SizedBox(
+                          height: imageH,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: _CharacterImageSlot(
+                              character: character,
+                              locked: locked,
+                            ),
                           ),
-                        ],
-                      ),
-                      child: const Text(
-                        'Coming Soon!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 10,
                         ),
+                        // ---- BOTTOM SECTION (below ribbon seam) ----
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: ribbonH / 2 + 8),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  ageText,
+                                  textAlign: TextAlign.center,
+                                  style: TTTypography.body(color: ribbonColor)
+                                      .copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 17,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                _UnlockPill(unlocked: !locked),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // ---- RIBBON: overlaps the bottom edge of the image ----
+                  Positioned(
+                    top: pad + imageH - ribbonH / 2,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: _RibbonBanner(
+                        text: character.name,
+                        color: ribbonColor,
+                        minWidth: w * 0.58,
+                        height: ribbonH,
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-        ),
+
+                  if (locked)
+                    Positioned(
+                      top: -8,
+                      right: -6,
+                      child: Transform.rotate(
+                        angle: 0.18,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF6C4D),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x33000000),
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Text(
+                            'Coming Soon!',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -733,26 +805,40 @@ class _CharacterImageSlot extends StatelessWidget {
   }
 }
 
-/// Ribbon-style nameplate with pointed folded ends, matching reference.
+/// Ribbon-style nameplate with pointed folded ends and stitched
+/// dashed border, matching reference.
 class _RibbonBanner extends StatelessWidget {
-  const _RibbonBanner({required this.text, required this.color});
+  const _RibbonBanner({
+    required this.text,
+    required this.color,
+    this.minWidth = 0,
+    this.height = 44,
+  });
 
   final String text;
   final Color color;
+  final double minWidth;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     return ClipPath(
       clipper: _RibbonClipper(),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
-        color: color,
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: 18,
+      child: CustomPaint(
+        foregroundPainter: _StitchPainter(),
+        child: Container(
+          height: height,
+          constraints: BoxConstraints(minWidth: minWidth),
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          color: color,
+          alignment: Alignment.center,
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 22,
+            ),
           ),
         ),
       ),
@@ -760,10 +846,39 @@ class _RibbonBanner extends StatelessWidget {
   }
 }
 
+/// Dashed "stitch" line along the ribbon's top and bottom edges.
+class _StitchPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.55)
+      ..strokeWidth = 1.6
+      ..strokeCap = StrokeCap.round;
+
+    const dash = 6.0;
+    const gap = 5.0;
+    const inset = 12.0;
+    for (final y in [5.0, size.height - 5.0]) {
+      var x = inset;
+      while (x < size.width - inset) {
+        canvas.drawLine(
+          Offset(x, y),
+          Offset((x + dash).clamp(0, size.width - inset), y),
+          paint,
+        );
+        x += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StitchPainter oldDelegate) => false;
+}
+
 class _RibbonClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
-    const notch = 8.0;
+    const notch = 10.0;
     final path = Path()
       ..moveTo(notch, 0)
       ..lineTo(size.width - notch, 0)
@@ -789,10 +904,10 @@ class _UnlockPill extends StatelessWidget {
     final color = unlocked ? const Color(0xFF4CAF50) : const Color(0xFF9AA0A6);
     return Center(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
         decoration: BoxDecoration(
           color: unlocked ? const Color(0xFFDFF4E2) : const Color(0xFFEDEDED),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(color: color, width: 1.5),
         ),
         child: Row(
@@ -801,7 +916,7 @@ class _UnlockPill extends StatelessWidget {
             Icon(
               unlocked ? Icons.check_circle_rounded : Icons.lock_rounded,
               color: color,
-              size: 16,
+              size: 18,
             ),
             const SizedBox(width: 6),
             Text(
@@ -809,7 +924,7 @@ class _UnlockPill extends StatelessWidget {
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w800,
-                fontSize: 13,
+                fontSize: 14,
               ),
             ),
           ],
@@ -836,12 +951,21 @@ class _DotsIndicator extends StatelessWidget {
         final active = i == activeIndex;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 220),
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: active ? 24 : 10,
-          height: 10,
+          margin: const EdgeInsets.symmetric(horizontal: 5),
+          width: active ? 15 : 12,
+          height: active ? 15 : 12,
           decoration: BoxDecoration(
-            color: active ? const Color(0xFFFFC93C) : const Color(0xFFD9D9D9),
-            borderRadius: BorderRadius.circular(6),
+            shape: BoxShape.circle,
+            color: active
+                ? const Color(0xFFFFC93C)
+                : Colors.white.withValues(alpha: 0.9),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x22000000),
+                blurRadius: 3,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
         );
       }),
@@ -862,65 +986,88 @@ class PlayCtaButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool comingSoon;
 
+  static const double _height = 64;
+  static const double _baseOffset = 6; // 3D thickness below the face
+
   @override
   Widget build(BuildContext context) {
     final colors = comingSoon
         ? const [Color(0xFFBDBDBD), Color(0xFF8E8E8E)]
         : const [Color(0xFF7ED957), Color(0xFF3FA34D)];
-    final borderColor =
-    comingSoon ? const Color(0xFF6E6E6E) : const Color(0xFF2E7D32);
+    final baseColor =
+        comingSoon ? const Color(0xFF6E6E6E) : const Color(0xFF2E7D32);
 
     return BounceButton(
       onPressed: onPressed ?? () {},
       semanticLabel: comingSoon ? 'Coming Soon' : 'Play',
-      child: Container(
-        width: double.infinity,
-        height: 64,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: colors,
+      child: Center(
+        child: SizedBox(
+          width: 250,
+          height: _height + _baseOffset,
+          child: Stack(
+            children: [
+              // ---- BASE LAYER: dark green thickness + ambient shadow ----
+              Positioned(
+                top: _baseOffset,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: _height,
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    borderRadius: BorderRadius.circular(32),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x40000000),
+                        blurRadius: 10,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // ---- FACE LAYER: glossy green gradient ----
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: _height,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: colors,
+                    ),
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        comingSoon
+                            ? Icons.lock_rounded
+                            : Icons.play_arrow_rounded,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        comingSoon ? 'Coming Soon' : 'Play',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 26,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: borderColor, width: 3),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x40000000),
-              blurRadius: 10,
-              offset: Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                comingSoon ? Icons.lock_rounded : Icons.play_arrow_rounded,
-                color: comingSoon
-                    ? const Color(0xFF8E8E8E)
-                    : const Color(0xFF3FA34D),
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              comingSoon ? 'Coming Soon' : 'Play',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 24,
-              ),
-            ),
-          ],
         ),
       ),
     );
