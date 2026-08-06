@@ -28,7 +28,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.82);
+    _pageController = PageController(viewportFraction: 0.62);
     _pageController.addListener(() {
       setState(() => _page = _pageController.page ?? 0);
     });
@@ -152,29 +152,32 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
                         itemBuilder: (context, index) {
                           final character = familyCharacters[index];
                           final dist = (_page - index).abs();
-                          final scale = (1 - (dist * 0.12)).clamp(0.85, 1.0);
+                          final scale = (1 - (dist * 0.12)).clamp(0.88, 1.0);
                           final selected = dist < 0.5;
-                          return Transform.scale(
-                            scale: scale,
-                            child: GestureDetector(
-                              onTap: () => _onCardTap(character, index),
-                              child: CharacterCard(
-                                character: character,
-                                selected: selected,
+                          return Align(
+                            alignment: Alignment.center,
+                            child: Transform.scale(
+                              scale: scale,
+                              child: GestureDetector(
+                                onTap: () => _onCardTap(character, index),
+                                child: CharacterCard(
+                                  character: character,
+                                  selected: selected,
+                                ),
                               ),
                             ),
                           );
                         },
                       ),
                       Align(
-                        alignment: const Alignment(-1.02, -0.12),
+                        alignment: const Alignment(-1.02, 0),
                         child: _CarouselArrow(
                           icon: Icons.chevron_left_rounded,
                           onPressed: () => _flip(-1),
                         ),
                       ),
                       Align(
-                        alignment: const Alignment(1.02, -0.12),
+                        alignment: const Alignment(1.02, 0),
                         child: _CarouselArrow(
                           icon: Icons.chevron_right_rounded,
                           onPressed: () => _flip(1),
@@ -493,87 +496,95 @@ class CharacterCard extends StatelessWidget {
     final locked = !character.isUnlocked;
 
     return Center(
-      child: Container(
-        width: 280,
-        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-        padding: const EdgeInsets.fromLTRB(14, 18, 14, 16),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(
-            color: Colors.white,
-            width: selected && !locked ? 8 : 6,
-          ),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x33000000),
-              blurRadius: 16,
-              offset: Offset(0, 8),
+      child: SizedBox(
+        width: 210,
+        height: 340,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.white,
+              width: selected && !locked ? 6 : 5,
             ),
-          ],
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Column(
-              children: [
-                // ---- IMAGE SLOT (add Bao / Poko / etc. artwork here) ----
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(22),
-                    child: _CharacterImageSlot(
-                      character: character,
-                      locked: locked,
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 14,
+                offset: Offset(0, 7),
+              ),
+            ],
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Column(
+                children: [
+                  // ---- IMAGE SLOT ----
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: _CharacterImageSlot(
+                        character: character,
+                        locked: locked,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                _RibbonBanner(
-                  text: character.name,
-                  color: _ribbonColorFor(cardColor),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  character.subtitle, // e.g. "Age 0-2"
-                  style: TTTypography.body(color: TTColors.darkBrown)
-                      .copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 10),
-                _UnlockPill(unlocked: !locked),
-              ],
-            ),
-            if (locked)
-              Positioned(
-                top: -10,
-                right: -8,
-                child: Transform.rotate(
-                  angle: 0.18,
-                  child: Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF6C4D),
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x33000000),
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
+                  const SizedBox(height: 8),
+                  _RibbonBanner(
+                    text: character.name,
+                    color: _ribbonColorFor(cardColor),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    character.subtitle,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TTTypography.caption(color: TTColors.darkBrown)
+                        .copyWith(fontWeight: FontWeight.w700, fontSize: 11),
+                  ),
+                  const SizedBox(height: 8),
+                  _UnlockPill(unlocked: !locked),
+                ],
+              ),
+              if (locked)
+                Positioned(
+                  top: -8,
+                  right: -6,
+                  child: Transform.rotate(
+                    angle: 0.18,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF6C4D),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x33000000),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Text(
+                        'Coming Soon!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 10,
                         ),
-                      ],
-                    ),
-                    child: const Text(
-                      'Coming Soon!',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 11,
                       ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -610,7 +621,7 @@ class _CharacterImageSlot extends StatelessWidget {
       children: [
         Image.asset(
           path,
-          fit: BoxFit.contain,
+          fit: BoxFit.cover,
           errorBuilder: (context, error, stack) => Container(
             color: Colors.white.withValues(alpha: 0.25),
             child: Center(
@@ -672,7 +683,7 @@ class _RibbonBanner extends StatelessWidget {
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w900,
-            fontSize: 22,
+            fontSize: 18,
           ),
         ),
       ),
