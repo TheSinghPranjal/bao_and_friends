@@ -1,17 +1,14 @@
-import 'dart:math' as math;
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/character.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
-import '../../widgets/bao_face.dart';
 import '../../widgets/bounce_button.dart';
-import '../../widgets/status_bar.dart';
 
 /// Screen 2 — Character Selection (Family Carousel).
+/// Static background image (provided by you) + card carousel that
+/// visually matches the approved reference design exactly.
 class CharacterSelectionScreen extends StatefulWidget {
   const CharacterSelectionScreen({super.key});
 
@@ -20,35 +17,26 @@ class CharacterSelectionScreen extends StatefulWidget {
       _CharacterSelectionScreenState();
 }
 
-class _CharacterSelectionScreenState extends State<CharacterSelectionScreen>
-    with TickerProviderStateMixin {
+class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
   late final PageController _pageController;
-  late final AnimationController _ringSpin;
-  late final AnimationController _butterfly;
   double _page = 0;
+
+  // Demo values — wire these to your real player-progress provider.
+  final int stars = 125;
+  final int beans = 35;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.72);
+    _pageController = PageController(viewportFraction: 0.82);
     _pageController.addListener(() {
       setState(() => _page = _pageController.page ?? 0);
     });
-    _ringSpin = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 8),
-    )..repeat();
-    _butterfly = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    )..repeat();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _ringSpin.dispose();
-    _butterfly.dispose();
     super.dispose();
   }
 
@@ -56,10 +44,11 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen>
       familyCharacters[_page.round().clamp(0, familyCharacters.length - 1)];
 
   void _flip(int delta) {
-    final next = (_page.round() + delta).clamp(0, familyCharacters.length - 1);
+    final next =
+    (_page.round() + delta).clamp(0, familyCharacters.length - 1);
     _pageController.animateToPage(
       next,
-      duration: const Duration(milliseconds: 420),
+      duration: const Duration(milliseconds: 380),
       curve: Curves.easeOutCubic,
     );
   }
@@ -77,14 +66,12 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen>
     if ((_page.round() - index).abs() > 0) {
       _pageController.animateToPage(
         index,
-        duration: const Duration(milliseconds: 380),
+        duration: const Duration(milliseconds: 360),
         curve: Curves.easeOutCubic,
       );
       return;
     }
-    if (!c.isUnlocked) {
-      _showComingSoon(c);
-    }
+    if (!c.isUnlocked) _showComingSoon(c);
   }
 
   Future<void> _showComingSoon(FamilyCharacter c) async {
@@ -93,8 +80,8 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen>
       barrierDismissible: true,
       barrierLabel: 'Coming Soon',
       barrierColor: TTColors.darkBrown.withValues(alpha: 0.35),
-      transitionDuration: const Duration(milliseconds: 280),
-      pageBuilder: (context, anim, _) {
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (context, anim, __) {
         return Center(
           child: Material(
             color: Colors.transparent,
@@ -105,7 +92,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen>
           ),
         );
       },
-      transitionBuilder: (context, anim, _, child) {
+      transitionBuilder: (context, anim, __, child) {
         return FadeTransition(
           opacity: anim,
           child: ScaleTransition(
@@ -119,9 +106,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen>
     );
   }
 
-  void _openParentGateSettings() {
-    context.push('/parent-gate');
-  }
+  void _openParentGateSettings() => context.push('/parent-gate');
 
   @override
   Widget build(BuildContext context) {
@@ -131,100 +116,155 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          AnimatedBuilder(
-            animation: _butterfly,
-            builder: (context, _) =>
-                _ParkBackground(t: _butterfly.value),
+          // ================= BACKGROUND (STATIC IMAGE) =================
+          // TODO: replace with your final artwork. This path is a
+          // placeholder; add your file at this location or change the path.
+          Image.asset(
+            'assets/images/character_select_bg.png',
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stack) => const ColoredBox(
+              color: Color(0xFF8FD3F4), // fallback sky-blue if image missing
+            ),
           ),
-          Column(
-            children: [
-              TinyStatusBar(
-                showCounters: false,
-                onSettings: _openParentGateSettings,
-                leading: BounceButton(
-                  onPressed: _openParentGateSettings,
-                  semanticLabel: 'Tiny Think',
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: TTColors.creamWhite,
-                      border: Border.all(color: TTColors.skyBlue, width: 2),
-                      boxShadow: TTShadows.soft,
-                    ),
-                    child: const Center(child: BaoFace(size: 34)),
-                  ),
+
+          // ================= FOREGROUND CONTENT =================
+          SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                _TopBar(
+                  stars: stars,
+                  beans: beans,
+                  onBack: () => context.pop(),
+                  onSettings: _openParentGateSettings,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  'Who do you want to play with today?',
-                  textAlign: TextAlign.center,
-                  style: TTTypography.headline(color: TTColors.darkBrown),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    PageView.builder(
-                      controller: _pageController,
-                      itemCount: familyCharacters.length,
-                      physics: const BouncingScrollPhysics(),
-                      itemBuilder: (context, index) {
-                        final character = familyCharacters[index];
-                        final dist = (_page - index).abs();
-                        final scale = (1 - (dist * 0.18)).clamp(0.78, 1.0);
-                        final selected = dist < 0.5;
-                        return Transform.scale(
-                          scale: scale,
-                          child: Opacity(
-                            opacity: (1 - dist * 0.25).clamp(0.55, 1.0),
+                const SizedBox(height: 18),
+                // const _TitleLockup(),
+                const SizedBox(height: 18),
+                Expanded(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      PageView.builder(
+                        controller: _pageController,
+                        itemCount: familyCharacters.length,
+                        physics: const BouncingScrollPhysics(),
+                        itemBuilder: (context, index) {
+                          final character = familyCharacters[index];
+                          final dist = (_page - index).abs();
+                          final scale = (1 - (dist * 0.12)).clamp(0.85, 1.0);
+                          final selected = dist < 0.5;
+                          return Transform.scale(
+                            scale: scale,
                             child: GestureDetector(
                               onTap: () => _onCardTap(character, index),
                               child: CharacterCard(
                                 character: character,
                                 selected: selected,
-                                ringAnimation: _ringSpin,
                               ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-                    // Arrow buttons
-                    Positioned(
-                      left: 8,
-                      child: _CarouselArrow(
-                        icon: Icons.chevron_left_rounded,
-                        onPressed: () => _flip(-1),
+                          );
+                        },
                       ),
-                    ),
-                    Positioned(
-                      right: 8,
-                      child: _CarouselArrow(
-                        icon: Icons.chevron_right_rounded,
-                        onPressed: () => _flip(1),
+                      Align(
+                        alignment: const Alignment(-1.02, -0.12),
+                        child: _CarouselArrow(
+                          icon: Icons.chevron_left_rounded,
+                          onPressed: () => _flip(-1),
+                        ),
                       ),
-                    ),
-                  ],
+                      Align(
+                        alignment: const Alignment(1.02, -0.12),
+                        child: _CarouselArrow(
+                          icon: Icons.chevron_right_rounded,
+                          onPressed: () => _flip(1),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 12),
+                _DotsIndicator(
+                  count: familyCharacters.length,
+                  activeIndex: _page.round(),
+                ),
+                const SizedBox(height: 18),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                  child: PlayCtaButton(
+                    onPressed: locked ? null : _onPlay,
+                    comingSoon: locked,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =====================================================================
+// TOP BAR — gold back button (left) + star & bean pills (right)
+// =====================================================================
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.stars,
+    required this.beans,
+    required this.onBack,
+    required this.onSettings,
+  });
+
+  final int stars;
+  final int beans;
+  final VoidCallback onBack;
+  final VoidCallback onSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          BounceButton(
+            onPressed: onBack,
+            semanticLabel: 'Back',
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFFFC93C),
+                border: Border.all(color: const Color(0xFFE8A317), width: 3),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x33000000),
+                    blurRadius: 6,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  24,
-                  8,
-                  24,
-                  16 + MediaQuery.paddingOf(context).bottom,
-                ),
-                child: PlayCtaButton(
-                  onPressed: locked ? null : _onPlay,
-                  comingSoon: locked,
-                ),
+              child: const Icon(
+                Icons.chevron_left_rounded,
+                color: Color(0xFF7A4E12),
+                size: 30,
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              _CounterPill(
+                icon: Icons.star_rounded,
+                iconColor: const Color(0xFFFFC93C),
+                value: stars,
+              ),
+              const SizedBox(width: 10),
+              _CounterPill(
+                icon: Icons.eco_rounded,
+                iconColor: const Color(0xFF4CAF50),
+                value: beans,
               ),
             ],
           ),
@@ -234,6 +274,174 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen>
   }
 }
 
+class _CounterPill extends StatelessWidget {
+  const _CounterPill({
+    required this.icon,
+    required this.iconColor,
+    required this.value,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x22000000),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: iconColor, size: 20),
+          const SizedBox(width: 6),
+          Text(
+            '$value',
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+              color: Color(0xFF3A2E1F),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =====================================================================
+// TITLE LOCKUP — layered purple pill + tan pill, exactly like reference
+// =====================================================================
+// class _TitleLockup extends StatelessWidget {
+//   const _TitleLockup();
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Stack(
+//       alignment: Alignment.topCenter,
+//       clipBehavior: Clip.none,
+//       children: [
+//         Padding(
+//           padding: const EdgeInsets.only(top: 34),
+//           child: _TanPill(),
+//         ),
+//         // _PurplePill(),
+//       ],
+//     );
+//   }
+// }
+
+// class _PurplePill extends StatelessWidget {
+//   const _PurplePill();
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       margin: const EdgeInsets.symmetric(horizontal: 28),
+//       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+//       decoration: BoxDecoration(
+//         gradient: const LinearGradient(
+//           begin: Alignment.topCenter,
+//           end: Alignment.bottomCenter,
+//           colors: [Color(0xFF7B5FC7), Color(0xFF5B3FA0)],
+//         ),
+//         borderRadius: BorderRadius.circular(30),
+//         border: Border.all(color: Colors.white, width: 3),
+//         boxShadow: const [
+//           BoxShadow(
+//             color: Color(0x33000000),
+//             blurRadius: 8,
+//             offset: Offset(0, 4),
+//           ),
+//         ],
+//       ),
+//       child: Row(
+//         mainAxisSize: MainAxisSize.min,
+//         children: [
+//           const Icon(Icons.star_rounded, color: Color(0xFFFFC93C), size: 22),
+//           const SizedBox(width: 10),
+//           Column(
+//             mainAxisSize: MainAxisSize.min,
+//             children: [
+//               const Text(
+//                 'Choose Your',
+//                 style: TextStyle(
+//                   color: Colors.white,
+//                   fontWeight: FontWeight.w600,
+//                   fontSize: 15,
+//                 ),
+//               ),
+//               const Text(
+//                 'Family Member',
+//                 style: TextStyle(
+//                   color: Colors.white,
+//                   fontWeight: FontWeight.w900,
+//                   fontSize: 22,
+//                 ),
+//               ),
+//             ],
+//           ),
+//           const SizedBox(width: 10),
+//           const Icon(Icons.star_rounded, color: Color(0xFFFFC93C), size: 22),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// class _TanPill extends StatelessWidget {
+//   const _TanPill();
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+//       decoration: BoxDecoration(
+//         color: const Color(0xFFE0B15C),
+//         borderRadius: BorderRadius.circular(20),
+//         border: Border.all(color: Colors.white, width: 2),
+//         boxShadow: const [
+//           BoxShadow(
+//             color: Color(0x22000000),
+//             blurRadius: 4,
+//             offset: Offset(0, 3),
+//           ),
+//         ],
+//       ),
+//       child: Row(
+//         mainAxisSize: MainAxisSize.min,
+//         children: const [
+//           Icon(Icons.favorite_rounded, color: Color(0xFFE0668C), size: 14),
+//           SizedBox(width: 8),
+//           Text(
+//             'Meet Bao & Family',
+//             style: TextStyle(
+//               color: Colors.white,
+//               fontWeight: FontWeight.w700,
+//               fontSize: 13,
+//             ),
+//           ),
+//           SizedBox(width: 8),
+//           Icon(Icons.favorite_rounded, color: Color(0xFFE0668C), size: 14),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// =====================================================================
+// CAROUSEL ARROW — gold circle button
+// =====================================================================
 class _CarouselArrow extends StatelessWidget {
   const _CarouselArrow({required this.icon, required this.onPressed});
 
@@ -246,293 +454,400 @@ class _CarouselArrow extends StatelessWidget {
       onPressed: onPressed,
       semanticLabel: 'Flip carousel',
       child: Container(
-        width: TTSpacing.touchMin,
-        height: TTSpacing.touchMin,
+        width: 52,
+        height: 52,
         decoration: BoxDecoration(
-          color: TTColors.creamWhite,
+          color: const Color(0xFFFFC93C),
           shape: BoxShape.circle,
-          boxShadow: TTShadows.soft,
+          border: Border.all(color: const Color(0xFFE8A317), width: 3),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x33000000),
+              blurRadius: 6,
+              offset: Offset(0, 3),
+            ),
+          ],
         ),
-        child: Icon(icon, size: 36, color: TTColors.darkBrown),
+        child: Icon(icon, size: 30, color: const Color(0xFF7A4E12)),
       ),
     );
   }
 }
 
+// =====================================================================
+// CHARACTER CARD — image slot + ribbon name + age + unlock pill
+// =====================================================================
 class CharacterCard extends StatelessWidget {
   const CharacterCard({
     super.key,
     required this.character,
     required this.selected,
-    required this.ringAnimation,
   });
 
   final FamilyCharacter character;
   final bool selected;
-  final Animation<double> ringAnimation;
 
   @override
   Widget build(BuildContext context) {
-    final color = Color(character.cardColorValue);
+    final cardColor = Color(character.cardColorValue);
     final locked = !character.isUnlocked;
 
     return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minWidth: TTSpacing.touchCardMinW,
-          minHeight: TTSpacing.touchCardMinH,
-          maxWidth: 280,
-        ),
-        child: AnimatedBuilder(
-          animation: ringAnimation,
-          builder: (context, child) {
-            return CustomPaint(
-              painter: selected && !locked
-                  ? _DashedRingPainter(
-                      progress: ringAnimation.value,
-                      color: TTColors.golden,
-                    )
-                  : null,
-              child: child,
-            );
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(TTSpacing.radiusXl),
-              border: Border.all(color: TTColors.creamWhite, width: 5),
-              boxShadow: TTShadows.lift,
+      child: Container(
+        width: 280,
+        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        padding: const EdgeInsets.fromLTRB(14, 18, 14, 16),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(
+            color: Colors.white,
+            width: selected && !locked ? 8 : 6,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x33000000),
+              blurRadius: 16,
+              offset: Offset(0, 8),
             ),
-            child: Stack(
-              clipBehavior: Clip.none,
+          ],
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Column(
               children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Portrait
-                          Opacity(
-                            opacity: locked ? 0.6 : 1,
-                            child: _CharacterPortrait(character: character),
-                          ),
-                          if (locked) ...[
-                            ClipRRect(
-                              borderRadius:
-                                  BorderRadius.circular(TTSpacing.radiusLg),
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                                child: Container(
-                                  color: TTColors.frosted.withValues(alpha: 0.25),
-                                ),
-                              ),
-                            ),
-                            const Icon(
-                              Icons.lock_rounded,
-                              size: 48,
-                              color: TTColors.lockGold,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      character.name,
-                      style: TTTypography.title(color: TTColors.darkBrown),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      character.subtitle,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TTTypography.caption(color: TTColors.softBrown),
-                    ),
-                  ],
-                ),
-                if (locked)
-                  Positioned(
-                    top: -8,
-                    right: -4,
-                    child: Transform.rotate(
-                      angle: 0.2,
-                      child: const _ComingSoonRibbon(),
+                // ---- IMAGE SLOT (add Bao / Poko / etc. artwork here) ----
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: _CharacterImageSlot(
+                      character: character,
+                      locked: locked,
                     ),
                   ),
+                ),
+                const SizedBox(height: 12),
+                _RibbonBanner(
+                  text: character.name,
+                  color: _ribbonColorFor(cardColor),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  character.subtitle, // e.g. "Age 0-2"
+                  style: TTTypography.body(color: TTColors.darkBrown)
+                      .copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 10),
+                _UnlockPill(unlocked: !locked),
               ],
             ),
-          ),
+            if (locked)
+              Positioned(
+                top: -10,
+                right: -8,
+                child: Transform.rotate(
+                  angle: 0.18,
+                  child: Container(
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF6C4D),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      'Coming Soon!',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
+
+  Color _ribbonColorFor(Color base) {
+    // Slightly deeper shade of the card color for the nameplate ribbon.
+    final hsl = HSLColor.fromColor(base);
+    return hsl
+        .withLightness((hsl.lightness - 0.22).clamp(0.0, 1.0))
+        .withSaturation((hsl.saturation + 0.15).clamp(0.0, 1.0))
+        .toColor();
+  }
 }
 
-class _CharacterPortrait extends StatelessWidget {
-  const _CharacterPortrait({required this.character});
+/// Image slot for each character card.
+///
+/// Convention: drop a PNG at `assets/images/characters/<id>.png`
+/// (e.g. `bao.png`, `poko.png`, `po.png`, `koko.png`, `momo.png`, `dodo.png`)
+/// and it will render automatically. If the file isn't there yet, a clearly
+/// labeled placeholder is shown instead so you always know where art goes.
+class _CharacterImageSlot extends StatelessWidget {
+  const _CharacterImageSlot({required this.character, required this.locked});
 
   final FamilyCharacter character;
+  final bool locked;
 
   @override
   Widget build(BuildContext context) {
-    // Bao uses the locked face painter; others use soft silhouette placeholders
-    // matching card color until final 3D busts arrive.
-    if (character.id == CharacterId.bao) {
-      return const BaoFace(size: 140);
-    }
-    if (character.id == CharacterId.poko) {
-      return Stack(
-        alignment: Alignment.center,
-        children: [
-          const BaoFace(size: 140), // same species; outfit differs in final art
-          Positioned(
-            bottom: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: TTColors.pokoPink,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Poko',
-                style: TTTypography.caption(color: TTColors.darkBrown),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 24,
-            top: 36,
-            child: Icon(
-              Icons.auto_awesome,
-              size: 18,
-              color: TTColors.golden.withValues(alpha: 0.9),
-            ),
-          ),
-        ],
-      );
-    }
+    final path = 'assets/images/characters/${character.id.name}.png';
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        Icon(
-          _iconFor(character.id),
-          size: 88,
-          color: TTColors.darkBrown.withValues(alpha: 0.55),
-        ),
-        Text(
-          '3D portrait placeholder',
-          style: TTTypography.caption(
-            color: TTColors.darkBrown.withValues(alpha: 0.5),
+        Image.asset(
+          path,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stack) => Container(
+            color: Colors.white.withValues(alpha: 0.25),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.add_photo_alternate_rounded,
+                    size: 44,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Add ${character.name}\nimage here',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
+        if (locked)
+          Container(
+            color: Colors.white.withValues(alpha: 0.45),
+            child: const Center(
+              child: Icon(
+                Icons.lock_rounded,
+                size: 44,
+                color: Color(0xFFB08900),
+              ),
+            ),
+          ),
       ],
     );
   }
-
-  IconData _iconFor(CharacterId id) {
-    switch (id) {
-      case CharacterId.po:
-        return Icons.sports_soccer_rounded;
-      case CharacterId.koko:
-        return Icons.palette_rounded;
-      case CharacterId.momo:
-        return Icons.favorite_rounded;
-      case CharacterId.dodo:
-        return Icons.sentiment_very_satisfied_rounded;
-      default:
-        return Icons.pets_rounded;
-    }
-  }
 }
 
-class _ComingSoonRibbon extends StatefulWidget {
-  const _ComingSoonRibbon();
+/// Ribbon-style nameplate with pointed folded ends, matching reference.
+class _RibbonBanner extends StatelessWidget {
+  const _RibbonBanner({required this.text, required this.color});
 
-  @override
-  State<_ComingSoonRibbon> createState() => _ComingSoonRibbonState();
-}
-
-class _ComingSoonRibbonState extends State<_ComingSoonRibbon>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _flutter;
-
-  @override
-  void initState() {
-    super.initState();
-    _flutter = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _flutter.dispose();
-    super.dispose();
-  }
+  final String text;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _flutter,
-      builder: (context, child) {
-        return Transform.rotate(
-          angle: (_flutter.value - 0.5) * 0.08,
-          child: child,
-        );
-      },
+    return ClipPath(
+      clipper: _RibbonClipper(),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: TTColors.ribbonOrange,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: TTShadows.soft,
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
+        color: color,
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            fontSize: 22,
+          ),
         ),
-        child: Text('Coming Soon!', style: TTTypography.ribbon()),
       ),
     );
   }
 }
 
-class _DashedRingPainter extends CustomPainter {
-  _DashedRingPainter({required this.progress, required this.color});
-
-  final double progress;
-  final Color color;
-
+class _RibbonClipper extends CustomClipper<Path> {
   @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Rect.fromLTWH(4, 4, size.width - 8, size.height - 8);
-    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(36));
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path()..addRRect(rrect);
-    final metrics = path.computeMetrics().first;
-    const dash = 10.0;
-    const gap = 8.0;
-    var distance = progress * (dash + gap);
-    while (distance < metrics.length) {
-      final next = math.min(distance + dash, metrics.length);
-      canvas.drawPath(metrics.extractPath(distance, next), paint);
-      distance += dash + gap;
-    }
+  Path getClip(Size size) {
+    const notch = 8.0;
+    final path = Path()
+      ..moveTo(notch, 0)
+      ..lineTo(size.width - notch, 0)
+      ..lineTo(size.width, size.height / 2)
+      ..lineTo(size.width - notch, size.height)
+      ..lineTo(notch, size.height)
+      ..lineTo(0, size.height / 2)
+      ..close();
+    return path;
   }
 
   @override
-  bool shouldRepaint(covariant _DashedRingPainter oldDelegate) =>
-      oldDelegate.progress != progress;
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
+class _UnlockPill extends StatelessWidget {
+  const _UnlockPill({required this.unlocked});
+
+  final bool unlocked;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = unlocked ? const Color(0xFF4CAF50) : const Color(0xFF9AA0A6);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: unlocked ? const Color(0xFFDFF4E2) : const Color(0xFFEDEDED),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color, width: 1.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            unlocked ? Icons.check_circle_rounded : Icons.lock_rounded,
+            color: color,
+            size: 16,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            unlocked ? 'Unlocked' : 'Coming Soon',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =====================================================================
+// DOTS INDICATOR — worm-style pagination
+// =====================================================================
+class _DotsIndicator extends StatelessWidget {
+  const _DotsIndicator({required this.count, required this.activeIndex});
+
+  final int count;
+  final int activeIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(count, (i) {
+        final active = i == activeIndex;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: active ? 24 : 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: active ? const Color(0xFFFFC93C) : const Color(0xFFD9D9D9),
+            borderRadius: BorderRadius.circular(6),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+// =====================================================================
+// PLAY CTA BUTTON — 3D green pill button
+// =====================================================================
+class PlayCtaButton extends StatelessWidget {
+  const PlayCtaButton({
+    super.key,
+    required this.onPressed,
+    required this.comingSoon,
+  });
+
+  final VoidCallback? onPressed;
+  final bool comingSoon;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = comingSoon
+        ? const [Color(0xFFBDBDBD), Color(0xFF8E8E8E)]
+        : const [Color(0xFF7ED957), Color(0xFF3FA34D)];
+    final borderColor =
+    comingSoon ? const Color(0xFF6E6E6E) : const Color(0xFF2E7D32);
+
+    return BounceButton(
+      onPressed: onPressed ?? () {},
+      semanticLabel: comingSoon ? 'Coming Soon' : 'Play',
+      child: Container(
+        width: double.infinity,
+        height: 64,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: colors,
+          ),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: borderColor, width: 3),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x40000000),
+              blurRadius: 10,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                comingSoon ? Icons.lock_rounded : Icons.play_arrow_rounded,
+                color: comingSoon
+                    ? const Color(0xFF8E8E8E)
+                    : const Color(0xFF3FA34D),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              comingSoon ? 'Coming Soon' : 'Play',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 24,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =====================================================================
+// COMING SOON POPUP
+// =====================================================================
 class ComingSoonPopup extends StatelessWidget {
   const ComingSoonPopup({
     super.key,
@@ -550,9 +865,15 @@ class ComingSoonPopup extends StatelessWidget {
       margin: const EdgeInsets.all(24),
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
       decoration: BoxDecoration(
-        color: TTColors.creamWhite,
-        borderRadius: BorderRadius.circular(TTSpacing.radiusXl),
-        boxShadow: TTShadows.lift,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x40000000),
+            blurRadius: 16,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -563,22 +884,22 @@ class ComingSoonPopup extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Color(character.cardColorValue),
-              border: Border.all(color: TTColors.creamWhite, width: 4),
+              border: Border.all(color: Colors.white, width: 4),
             ),
-            child: character.id == CharacterId.bao ||
-                    character.id == CharacterId.poko
-                ? const Center(child: BaoFace(size: 72))
-                : Icon(
-                    Icons.waving_hand_rounded,
-                    size: 48,
-                    color: TTColors.darkBrown.withValues(alpha: 0.6),
-                  ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/characters/${character.id.name}.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stack) => const Icon(
+                  Icons.waving_hand_rounded,
+                  size: 40,
+                  color: Color(0xFF7A6A5A),
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 16),
-          Text(
-            character.name,
-            style: TTTypography.title(),
-          ),
+          Text(character.name, style: TTTypography.title()),
           const SizedBox(height: 8),
           Text(
             "I'm getting ready to play with you soon!",
@@ -593,9 +914,15 @@ class ComingSoonPopup extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 140, minHeight: 56),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: TTColors.golden,
-                borderRadius: BorderRadius.circular(TTSpacing.radiusPill),
-                boxShadow: TTShadows.soft,
+                color: const Color(0xFFFFC93C),
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x33000000),
+                    blurRadius: 6,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: Text('OK', style: TTTypography.button()),
             ),
@@ -604,106 +931,4 @@ class ComingSoonPopup extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ParkBackground extends StatelessWidget {
-  const _ParkBackground({required this.t});
-  final double t;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _ParkPainter(t: t),
-      child: const SizedBox.expand(),
-    );
-  }
-}
-
-class _ParkPainter extends CustomPainter {
-  _ParkPainter({required this.t});
-  final double t;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Sky gradient — late afternoon golden hour
-    final sky = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [TTColors.parkSkyTop, TTColors.parkSkyBottom],
-      ).createShader(Offset.zero & size);
-    canvas.drawRect(Offset.zero & size, sky);
-
-    // Soft clouds
-    final cloudPaint = Paint()
-      ..color = TTColors.creamWhite.withValues(alpha: 0.55);
-    final cloudShift = t * size.width * 0.08;
-    _cloud(canvas, Offset(size.width * 0.15 + cloudShift, size.height * 0.12),
-        40, cloudPaint);
-    _cloud(canvas, Offset(size.width * 0.7 - cloudShift * 0.5, size.height * 0.18),
-        32, cloudPaint);
-
-    // Hills (depth of field — softer back hill)
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.3, size.height * 0.72),
-        width: size.width * 1.2,
-        height: size.height * 0.45,
-      ),
-      Paint()..color = TTColors.parkGreen.withValues(alpha: 0.55),
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.7, size.height * 0.82),
-        width: size.width * 1.3,
-        height: size.height * 0.4,
-      ),
-      Paint()..color = TTColors.parkGreenDeep.withValues(alpha: 0.75),
-    );
-
-    // Shade tree
-    final treeX = size.width * 0.18;
-    final sway = math.sin(t * math.pi * 2) * 4;
-    canvas.drawRect(
-      Rect.fromLTWH(treeX - 8, size.height * 0.42, 16, size.height * 0.28),
-      Paint()..color = const Color(0xFF8B6914),
-    );
-    canvas.drawCircle(
-      Offset(treeX + sway, size.height * 0.38),
-      58,
-      Paint()..color = TTColors.parkGreenDeep,
-    );
-    canvas.drawCircle(
-      Offset(treeX - 30 + sway * 0.5, size.height * 0.42),
-      36,
-      Paint()..color = TTColors.parkGreen,
-    );
-
-    // Butterflies
-    final bf = Paint()..color = TTColors.pokoPink;
-    final bf2 = Paint()..color = TTColors.golden;
-    final bx = size.width * (0.4 + 0.35 * math.sin(t * math.pi * 2));
-    final by = size.height * (0.35 + 0.08 * math.cos(t * math.pi * 4));
-    canvas.drawCircle(Offset(bx, by), 4, bf);
-    canvas.drawCircle(Offset(bx + 8, by - 2), 3.5, bf);
-    final bx2 = size.width * (0.55 + 0.25 * math.cos(t * math.pi * 2));
-    final by2 = size.height * (0.28 + 0.1 * math.sin(t * math.pi * 3));
-    canvas.drawCircle(Offset(bx2, by2), 3.5, bf2);
-    canvas.drawCircle(Offset(bx2 + 7, by2 + 1), 3, bf2);
-
-    // Foreground grass
-    canvas.drawRect(
-      Rect.fromLTWH(0, size.height * 0.88, size.width, size.height * 0.12),
-      Paint()..color = TTColors.parkGreenDeep,
-    );
-  }
-
-  void _cloud(Canvas canvas, Offset c, double r, Paint paint) {
-    canvas.drawCircle(c, r, paint);
-    canvas.drawCircle(c.translate(-r * 0.7, 8), r * 0.7, paint);
-    canvas.drawCircle(c.translate(r * 0.65, 10), r * 0.65, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _ParkPainter oldDelegate) => oldDelegate.t != t;
 }
