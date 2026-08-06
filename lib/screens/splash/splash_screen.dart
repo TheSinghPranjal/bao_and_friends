@@ -7,7 +7,8 @@ import '../../theme/tt_typography.dart';
 import '../../widgets/status_bar.dart';
 
 /// Screen 1 — Splash.
-/// Full-screen looping background video + brand logo + bottom loader.
+/// Full-screen looping background video (unblurred, unfiltered) +
+/// top-pinned brand logo + bottom-pinned "Loading..." progress bar.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -111,7 +112,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final logoWidth = MediaQuery.sizeOf(context).width * 0.72;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final logoWidth = screenWidth * 0.7;
 
     return Scaffold(
       backgroundColor: TTColors.peachSoft,
@@ -122,6 +124,7 @@ class _SplashScreenState extends State<SplashScreen>
           return Stack(
             fit: StackFit.expand,
             children: [
+              // Full-bleed background video — no blur, no darkening filter.
               Opacity(
                 opacity: _bgFade.value,
                 child: _SplashBackground(
@@ -130,30 +133,18 @@ class _SplashScreenState extends State<SplashScreen>
                   failed: _videoFailed,
                 ),
               ),
-              // Light vignette so logo stays readable on bright frames
-              IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        TTColors.darkBrown.withValues(alpha: 0.12),
-                        Colors.transparent,
-                        Colors.transparent,
-                        TTColors.darkBrown.withValues(alpha: 0.22),
-                      ],
-                      stops: const [0.0, 0.25, 0.7, 1.0],
-                    ),
-                  ),
-                ),
-              ),
+
+              // Logo pinned to TOP + Loading bar pinned to BOTTOM.
               SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.all(TTSpacing.safe),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: TTSpacing.safe,
+                  ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Spacer(flex: 2),
+                      const SizedBox(height: 8),
+                      // ---- TOP: LOGO ----
                       Transform.scale(
                         scale: _logoScale.value * (1 + bloom * 0.08),
                         child: Opacity(
@@ -170,16 +161,25 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
                       ),
-                      const Spacer(flex: 3),
-                      Opacity(
-                        opacity: _loaderFade.value * (1 - bloom),
-                        child: const BambooLeafLoader(),
+
+                      // ---- MIDDLE: transparent, video shows through ----
+                      const Spacer(),
+
+                      // ---- BOTTOM: "Loading..." + progress bar ----
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 28),
+                        child: Opacity(
+                          opacity: _loaderFade.value * (1 - bloom),
+                          child: const _LoadingIndicator(),
+                        ),
                       ),
-                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
               ),
+
+              // Exit-only white bloom (transition to next screen), never
+              // visible during normal idle/loading state.
               IgnorePointer(
                 child: Container(
                   color: TTColors.warmWhite.withValues(alpha: bloom),
@@ -193,6 +193,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
+/// Full-bleed background video renderer — BoxFit.cover, zero blur / zero
+/// color filters, so the scene stays bright and crisp exactly like the
+/// reference artwork.
 class _SplashBackground extends StatelessWidget {
   const _SplashBackground({
     required this.controller,
@@ -225,5 +228,93 @@ class _SplashBackground extends StatelessWidget {
     }
 
     return const ColoredBox(color: TTColors.peachSoft);
+  }
+}
+
+/// "Loading..." label + rounded gradient progress bar, matching the
+/// reference screenshot. Uses an indeterminate sliding-gradient animation
+/// since actual asset load time is variable.
+class _LoadingIndicator extends StatefulWidget {
+  const _LoadingIndicator();
+
+  @override
+  State<_LoadingIndicator> createState() => _LoadingIndicatorState();
+}
+
+class _LoadingIndicatorState extends State<_LoadingIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _loop;
+
+  @override
+  void initState() {
+    super.initState();
+    _loop = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _loop.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Loading...',
+          // style: TTTypography.body.copyWith(
+          //   fontWeight: FontWeight.w700,
+          //   color: TTColors.darkBrown,
+          //   fontSize: 18,
+          // ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: 220,
+          height: 14,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              children: [
+                // Track
+                Container(color: const Color(0xFFE3E7EC)),
+                // Animated gradient fill sliding left → right, looping.
+                AnimatedBuilder(
+                  animation: _loop,
+                  builder: (context, _) {
+                    final t = _loop.value; // 0..1
+                    return Align(
+                      alignment: Alignment(-1 + 2 * t, 0),
+                      child: FractionallySizedBox(
+                        widthFactor: 0.55,
+                        heightFactor: 1,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            gradient: const LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                Color(0xFF7FD8F5),
+                                Color(0xFF2E9BF0),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
