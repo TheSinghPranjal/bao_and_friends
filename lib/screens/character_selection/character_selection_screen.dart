@@ -557,59 +557,70 @@ class CharacterCard extends StatelessWidget {
 
     return Center(
       child: SizedBox(
-        width: 210,
-        height: 340,
+        width: 230,
+        height: 420, // taller so nothing gets cropped/squeezed
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
           decoration: BoxDecoration(
-            color: cardColor,
+            color: Colors.white, // white card body, like the reference
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
               color: Colors.white,
               width: selected && !locked ? 6 : 5,
             ),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: Color(0x33000000),
+                color: Colors.black.withValues(alpha: 0.18),
                 blurRadius: 14,
-                offset: Offset(0, 7),
+                offset: const Offset(0, 7),
               ),
             ],
           ),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              Column(
-                children: [
-                  // ---- IMAGE SLOT ----
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: _CharacterImageSlot(
-                        character: character,
-                        locked: locked,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ---- IMAGE SLOT ----
+                    SizedBox(
+                      height: 220,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: _CharacterImageSlot(
+                          character: character,
+                          locked: locked,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  _RibbonBanner(
+                    const SizedBox(height: 26), // room for ribbon overlap
+                    Text(
+                      'Age ${character.subtitle}',
+                      textAlign: TextAlign.center,
+                      style: TTTypography.body(color: TTColors.darkBrown)
+                          .copyWith(fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                    const SizedBox(height: 10),
+                    _UnlockPill(unlocked: !locked),
+                  ],
+                ),
+              ),
+
+              // ---- RIBBON: overlaps the bottom edge of the image ----
+              Positioned(
+                top: 220 + 10 - 18, // imageHeight + topPadding - half ribbon height
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: _RibbonBanner(
                     text: character.name,
                     color: _ribbonColorFor(cardColor),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    character.subtitle,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TTTypography.caption(color: TTColors.darkBrown)
-                        .copyWith(fontWeight: FontWeight.w700, fontSize: 11),
-                  ),
-                  const SizedBox(height: 8),
-                  _UnlockPill(unlocked: !locked),
-                ],
+                ),
               ),
+
               if (locked)
                 Positioned(
                   top: -8,
@@ -651,7 +662,6 @@ class CharacterCard extends StatelessWidget {
   }
 
   Color _ribbonColorFor(Color base) {
-    // Slightly deeper shade of the card color for the nameplate ribbon.
     final hsl = HSLColor.fromColor(base);
     return hsl
         .withLightness((hsl.lightness - 0.22).clamp(0.0, 1.0))
@@ -661,11 +671,6 @@ class CharacterCard extends StatelessWidget {
 }
 
 /// Image slot for each character card.
-///
-/// Convention: drop a PNG at `assets/images/characters/<id>.png`
-/// (e.g. `bao.png`, `poko.png`, `po.png`, `koko.png`, `momo.png`, `dodo.png`)
-/// and it will render automatically. If the file isn't there yet, a clearly
-/// labeled placeholder is shown instead so you always know where art goes.
 class _CharacterImageSlot extends StatelessWidget {
   const _CharacterImageSlot({required this.character, required this.locked});
 
@@ -679,11 +684,15 @@ class _CharacterImageSlot extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
+        Container(
+          color: Color(character.cardColorValue).withValues(alpha: 0.25),
+        ),
         Image.asset(
           path,
-          fit: BoxFit.cover,
+          fit: BoxFit.cover, // fills the slot, no cropping since slot is
+                              // now correctly sized for the card height
           errorBuilder: (context, error, stack) => Container(
-            color: Colors.white.withValues(alpha: 0.25),
+            color: Color(character.cardColorValue).withValues(alpha: 0.35),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -778,31 +787,33 @@ class _UnlockPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = unlocked ? const Color(0xFF4CAF50) : const Color(0xFF9AA0A6);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: unlocked ? const Color(0xFFDFF4E2) : const Color(0xFFEDEDED),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color, width: 1.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            unlocked ? Icons.check_circle_rounded : Icons.lock_rounded,
-            color: color,
-            size: 16,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            unlocked ? 'Unlocked' : 'Coming Soon',
-            style: TextStyle(
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: unlocked ? const Color(0xFFDFF4E2) : const Color(0xFFEDEDED),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color, width: 1.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              unlocked ? Icons.check_circle_rounded : Icons.lock_rounded,
               color: color,
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
+              size: 16,
             ),
-          ),
-        ],
+            const SizedBox(width: 6),
+            Text(
+              unlocked ? 'Unlocked' : 'Coming Soon',
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
