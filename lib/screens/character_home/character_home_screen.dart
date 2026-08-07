@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../models/character.dart';
 import '../../theme/tt_colors.dart';
@@ -10,7 +11,7 @@ import '../../widgets/bao_face.dart';
 import '../../widgets/bounce_button.dart';
 import '../../widgets/status_bar.dart';
 
-/// Character Home — bedroom with floating activity bubbles.
+/// Character Home — looping bedroom video (Bao) + floating side activity bubbles.
 class CharacterHomeScreen extends StatefulWidget {
   const CharacterHomeScreen({super.key, required this.characterId});
 
@@ -21,16 +22,21 @@ class CharacterHomeScreen extends StatefulWidget {
 }
 
 class _CharacterHomeScreenState extends State<CharacterHomeScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
+  static const _baoVideoAsset =
+      'assets/videos/bao_character_screen_bg_video.mp4';
+
   late final AnimationController _float;
-  late final AnimationController _idle;
   late FamilyCharacter character;
   int stars = 12;
   int beans = 3;
   int level = 2;
 
+  VideoPlayerController? _video;
+  bool _videoReady = false;
 
-  static const _bubbles = <_BubbleSpec>[
+  /// Left column then right column — keeps Bao (center of the video) clear.
+  static const _leftBubbles = <_BubbleSpec>[
     _BubbleSpec('Learn', Icons.menu_book_rounded, TTColors.skyBlue, '/learn'),
     _BubbleSpec('Feed', Icons.restaurant_rounded, TTColors.momoCoral, '/feed'),
     _BubbleSpec(
@@ -39,6 +45,9 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       TTColors.waterBlue,
       '/drink',
     ),
+  ];
+
+  static const _rightBubbles = <_BubbleSpec>[
     _BubbleSpec('Play', Icons.sports_esports_rounded, TTColors.golden, '/play'),
     _BubbleSpec(
       'Chores',
@@ -47,6 +56,8 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       '/chores',
     ),
   ];
+
+  bool get _isBao => character.id == CharacterId.bao;
 
   @override
   void initState() {
@@ -60,16 +71,36 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       vsync: this,
       duration: const Duration(seconds: 4),
     )..repeat(reverse: true);
-    _idle = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
+
+    if (_isBao) {
+      _initVideo();
+    }
+  }
+
+  Future<void> _initVideo() async {
+    final controller = VideoPlayerController.asset(_baoVideoAsset);
+    try {
+      await controller.initialize();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      await controller.setLooping(true);
+      await controller.setVolume(0);
+      await controller.play();
+      setState(() {
+        _video = controller;
+        _videoReady = true;
+      });
+    } catch (_) {
+      await controller.dispose();
+    }
   }
 
   @override
   void dispose() {
     _float.dispose();
-    _idle.dispose();
+    _video?.dispose();
     super.dispose();
   }
 
@@ -82,10 +113,38 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     final comingSoon = !character.isUnlocked;
 
     return Scaffold(
+      backgroundColor: TTColors.peachSoft,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const _HomeBedroomBg(),
+          // ---- LOOPING BACKGROUND ----
+          if (_isBao)
+            _LoopingVideoBackground(
+              controller: _video,
+              ready: _videoReady,
+            )
+          else
+            const _HomeBedroomBg(),
+
+          // Soft edge vignette so bubbles stay readable
+          IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    TTColors.darkBrown.withValues(alpha: 0.12),
+                    Colors.transparent,
+                    Colors.transparent,
+                    TTColors.darkBrown.withValues(alpha: 0.12),
+                  ],
+                  stops: const [0.0, 0.18, 0.82, 1.0],
+                ),
+              ),
+            ),
+          ),
+
           Column(
             children: [
               TinyStatusBar(
@@ -122,72 +181,84 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
                 ),
               Expanded(
                 child: AnimatedBuilder(
-                  animation: Listenable.merge([_float, _idle]),
+                  animation: _float,
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         final w = constraints.maxWidth;
                         final h = constraints.maxHeight;
-                        final center = Offset(w / 2, h * 0.55);
+                        final t = _float.value;
 
                         return Stack(
                           children: [
-                            // Floating bubbles around Bao
-                            for (var i = 0; i < _bubbles.length; i++)
-                              _FloatingBubble(
-                                spec: _bubbles[i],
-                                center: center,
+                            // ---- LEFT SIDE BUBBLES ----
+                            for (var i = 0; i < _leftBubbles.length; i++)
+                              _SideBubble(
+                                spec: _leftBubbles[i],
+                                side: _BubbleSide.left,
                                 index: i,
-                                total: _bubbles.length,
-                                radius: math.min(w, h) * 0.32,
-                                t: _float.value,
-                                onTap: () => _openBubble(_bubbles[i]),
+                                count: _leftBubbles.length,
+                                screenSize: Size(w, h),
+                                t: t,
+                                onTap: () => _openBubble(_leftBubbles[i]),
                               ),
-                            // Character center-stage
-                            Positioned(
-                              left: center.dx - 70,
-                              top: center.dy -
-                                  70 +
-                                  math.sin(_idle.value * math.pi) * -8,
-                              child: Column(
-                                children: [
-                                  Container(
-                                    width: 140,
-                                    height: 140,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Color(character.cardColorValue)
-                                          .withValues(alpha: 0.35),
-                                      boxShadow: TTShadows.glow(
-                                        Color(character.cardColorValue),
+
+                            // ---- RIGHT SIDE BUBBLES ----
+                            for (var i = 0; i < _rightBubbles.length; i++)
+                              _SideBubble(
+                                spec: _rightBubbles[i],
+                                side: _BubbleSide.right,
+                                index: i,
+                                count: _rightBubbles.length,
+                                screenSize: Size(w, h),
+                                t: t,
+                                onTap: () => _openBubble(_rightBubbles[i]),
+                              ),
+
+                            // For non-Bao characters (no video yet), keep a
+                            // gentle center-stage portrait so the room isn't empty.
+                            if (!_isBao)
+                              Positioned(
+                                left: w / 2 - 70,
+                                top: h * 0.42,
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      width: 140,
+                                      height: 140,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Color(character.cardColorValue)
+                                            .withValues(alpha: 0.35),
+                                        boxShadow: TTShadows.glow(
+                                          Color(character.cardColorValue),
+                                        ),
                                       ),
-                                    ),
-                                    child: character.id == CharacterId.bao ||
-                                            character.id == CharacterId.poko
-                                        ? const Center(
-                                            child: BaoFace(size: 110),
-                                          )
-                                        : Center(
-                                            child: Text(
-                                              character.name[0],
-                                              style: TTTypography.displayHero(
-                                                color: TTColors.darkBrown,
+                                      child: character.id == CharacterId.poko
+                                          ? const Center(
+                                              child: BaoFace(size: 110),
+                                            )
+                                          : Center(
+                                              child: Text(
+                                                character.name[0],
+                                                style: TTTypography.displayHero(
+                                                  color: TTColors.darkBrown,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    character.name,
-                                    style: TTTypography.title(),
-                                  ),
-                                  Text(
-                                    'Ready to play!',
-                                    style: TTTypography.subtitle(),
-                                  ),
-                                ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      character.name,
+                                      style: TTTypography.title(),
+                                    ),
+                                    Text(
+                                      'Ready to play!',
+                                      style: TTTypography.subtitle(),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
                           ],
                         );
                       },
@@ -203,6 +274,40 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
   }
 }
 
+class _LoopingVideoBackground extends StatelessWidget {
+  const _LoopingVideoBackground({
+    required this.controller,
+    required this.ready,
+  });
+
+  final VideoPlayerController? controller;
+  final bool ready;
+
+  @override
+  Widget build(BuildContext context) {
+    if (ready && controller != null && controller!.value.isInitialized) {
+      final size = controller!.value.size;
+      return ColoredBox(
+        color: TTColors.peachSoft,
+        child: SizedBox.expand(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            clipBehavior: Clip.hardEdge,
+            child: SizedBox(
+              width: size.width > 0 ? size.width : 393,
+              height: size.height > 0 ? size.height : 852,
+              child: VideoPlayer(controller!),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Soft peach while the video initializes
+    return const ColoredBox(color: TTColors.peachSoft);
+  }
+}
+
 class _BubbleSpec {
   const _BubbleSpec(this.label, this.icon, this.color, this.route);
   final String label;
@@ -211,31 +316,44 @@ class _BubbleSpec {
   final String route;
 }
 
-class _FloatingBubble extends StatelessWidget {
-  const _FloatingBubble({
+enum _BubbleSide { left, right }
+
+/// Floating activity bubble anchored to the left or right side of the screen.
+class _SideBubble extends StatelessWidget {
+  const _SideBubble({
     required this.spec,
-    required this.center,
+    required this.side,
     required this.index,
-    required this.total,
-    required this.radius,
+    required this.count,
+    required this.screenSize,
     required this.t,
     required this.onTap,
   });
 
   final _BubbleSpec spec;
-  final Offset center;
+  final _BubbleSide side;
   final int index;
-  final int total;
-  final double radius;
+  final int count;
+  final Size screenSize;
   final double t;
   final VoidCallback onTap;
 
+  static const double _bubbleSize = 92;
+
   @override
   Widget build(BuildContext context) {
-    final angle = -math.pi / 2 + (index / total) * math.pi * 2 + t * 0.15;
-    final bob = math.sin((t + index * 0.2) * math.pi * 2) * 6;
-    final x = center.dx + math.cos(angle) * radius - 44;
-    final y = center.dy + math.sin(angle) * radius - 44 + bob;
+    // Vertical band in the middle of the screen, evenly spaced.
+    final topPad = screenSize.height * 0.18;
+    final bottomPad = screenSize.height * 0.14;
+    final usable = screenSize.height - topPad - bottomPad;
+    final step = usable / (count + 1);
+    final bob = math.sin((t + index * 0.28) * math.pi * 2) * 8;
+    final y = topPad + step * (index + 1) - _bubbleSize / 2 + bob;
+
+    final edgePad = math.max(12.0, screenSize.width * 0.04);
+    final x = side == _BubbleSide.left
+        ? edgePad
+        : screenSize.width - edgePad - _bubbleSize;
 
     return Positioned(
       left: x,
@@ -244,8 +362,8 @@ class _FloatingBubble extends StatelessWidget {
         onPressed: onTap,
         semanticLabel: spec.label,
         child: Container(
-          width: 88,
-          height: 88,
+          width: _bubbleSize,
+          height: _bubbleSize,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: spec.color,
@@ -255,10 +373,12 @@ class _FloatingBubble extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(spec.icon, color: TTColors.darkBrown, size: 28),
+              Icon(spec.icon, color: TTColors.darkBrown, size: 30),
+              const SizedBox(height: 2),
               Text(
                 spec.label,
-                style: TTTypography.caption(color: TTColors.darkBrown),
+                style: TTTypography.caption(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -296,10 +416,13 @@ class _HomeBedroomBg extends StatelessWidget {
 class _HomeRoomPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // Window
     final win = RRect.fromRectAndRadius(
-      Rect.fromLTWH(size.width * 0.55, size.height * 0.12, size.width * 0.32,
-          size.height * 0.22),
+      Rect.fromLTWH(
+        size.width * 0.55,
+        size.height * 0.12,
+        size.width * 0.32,
+        size.height * 0.22,
+      ),
       const Radius.circular(20),
     );
     canvas.drawRRect(win, Paint()..color = TTColors.skySoft);
@@ -311,13 +434,11 @@ class _HomeRoomPainter extends CustomPainter {
         ..strokeWidth = 6,
     );
 
-    // Floor
     canvas.drawRect(
       Rect.fromLTWH(0, size.height * 0.78, size.width, size.height * 0.22),
       Paint()..color = const Color(0xFFD4A574).withValues(alpha: 0.55),
     );
 
-    // Soft rug
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(size.width * 0.5, size.height * 0.82),
