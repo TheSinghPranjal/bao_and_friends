@@ -78,6 +78,8 @@ flutter:
   assets:
     - assets/videos/splash_screen_bg_video.mp4
     - assets/videos/bao_character_screen_bg_video.mp4
+    - assets/videos/bao_not_drinking_water.mp4
+    - assets/videos/bao_drinking_water.mp4
     - assets/images/logo_splash_screen.png
     - assets/images/character_select_bg.png
     - assets/images/characters/
