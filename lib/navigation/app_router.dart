@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/character_home/character_home_screen.dart';
 import '../screens/character_selection/character_selection_screen.dart';
 import '../screens/drink/drink_water_screen.dart';
+import '../screens/feed/feed_screen.dart';
 import '../screens/hubs/module_hubs.dart';
 import '../screens/shared/module_hub_screen.dart';
 import '../screens/splash/splash_screen.dart';
@@ -37,7 +38,7 @@ GoRouter createAppRouter({bool skipSplash = false}) {
       ),
       GoRoute(
         path: '/feed',
-        builder: (context, state) => const FeedHubScreen(),
+        builder: (context, state) => const FeedScreen(),
       ),
       GoRoute(
         path: '/play',

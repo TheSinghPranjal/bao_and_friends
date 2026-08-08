@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 import '../../models/character.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
+import '../../widgets/back_button_circle.dart';
 import '../../widgets/bao_face.dart';
 import '../../widgets/bounce_button.dart';
 import '../../widgets/status_bar.dart';
@@ -153,22 +154,9 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
                 level: level,
                 onSettings: () => context.push('/parent-gate'),
                 onProfile: () => context.push('/profile'),
-                leading: BounceButton(
+                leading: TtBackButton(
                   onPressed: () => context.go('/select'),
                   semanticLabel: 'Back to family',
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: TTColors.creamWhite,
-                      boxShadow: TTShadows.soft,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back_rounded,
-                      color: TTColors.darkBrown,
-                    ),
-                  ),
                 ),
               ),
               if (comingSoon)
