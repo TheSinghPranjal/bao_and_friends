@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
+import '../../widgets/back_button_circle.dart';
 import '../../widgets/bounce_button.dart';
 import '../../widgets/status_bar.dart';
 
@@ -39,19 +40,7 @@ class ModuleHubScreen extends StatelessWidget {
           children: [
             TinyStatusBar(
               onSettings: () => context.push('/parent-gate'),
-              leading: BounceButton(
-                onPressed: () => context.pop(),
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: TTColors.creamWhite,
-                    boxShadow: TTShadows.soft,
-                  ),
-                  child: const Icon(Icons.arrow_back_rounded),
-                ),
-              ),
+              leading: TtBackButton(onPressed: () => context.pop()),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
@@ -173,19 +162,7 @@ class _ActivityPlaceholderScreenState extends State<ActivityPlaceholderScreen>
             children: [
               Row(
                 children: [
-                  BounceButton(
-                    onPressed: () => context.pop(),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: TTColors.creamWhite,
-                        boxShadow: TTShadows.soft,
-                      ),
-                      child: const Icon(Icons.arrow_back_rounded),
-                    ),
-                  ),
+                  TtBackButton(onPressed: () => context.pop()),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
