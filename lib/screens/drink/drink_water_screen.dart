@@ -306,8 +306,8 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
                                 final x = constraints.maxWidth * 0.5 +
                                     math.cos(angle) * constraints.maxWidth * 0.32 -
                                     (bubbleSize / 2);
-                                final y = constraints.maxHeight * 0.35 +
-                                    math.sin(angle) * 80 +
+                                final y = constraints.maxHeight * 0.12 +
+                                    math.sin(angle) * 50 +
                                     bob;
                                 final done = _drunk.contains(i);
                                 return Positioned(
