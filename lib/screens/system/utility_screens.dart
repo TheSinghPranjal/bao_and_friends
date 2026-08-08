@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
+import '../../widgets/back_button_circle.dart';
 import '../../widgets/bao_face.dart';
 import '../../widgets/bounce_button.dart';
 
@@ -172,19 +173,7 @@ class _SimpleListScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  BounceButton(
-                    onPressed: () => context.pop(),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: TTColors.creamWhite,
-                        boxShadow: TTShadows.soft,
-                      ),
-                      child: const Icon(Icons.arrow_back_rounded),
-                    ),
-                  ),
+                  TtBackButton(onPressed: () => context.pop()),
                   const SizedBox(width: 12),
                   Text(title, style: TTTypography.headline()),
                 ],
@@ -253,19 +242,7 @@ class PlaceholderInfoScreen extends StatelessWidget {
             children: [
               Align(
                 alignment: Alignment.centerLeft,
-                child: BounceButton(
-                  onPressed: () => context.pop(),
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: TTColors.creamWhite,
-                      boxShadow: TTShadows.soft,
-                    ),
-                    child: const Icon(Icons.arrow_back_rounded),
-                  ),
-                ),
+                child: TtBackButton(onPressed: () => context.pop()),
               ),
               const Spacer(),
               const BaoFace(size: 96),
