@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import '../../models/rewards.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
+import '../../widgets/back_button_circle.dart';
 import '../../widgets/bounce_button.dart';
 import '../../widgets/status_bar.dart';
 
@@ -258,23 +259,7 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
                 beans: 3,
                 level: 2,
                 onSettings: () => context.push('/parent-gate'),
-                leading: BounceButton(
-                  onPressed: () => context.pop(),
-                  semanticLabel: 'Back',
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: TTColors.creamWhite,
-                      boxShadow: TTShadows.soft,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back_rounded,
-                      color: TTColors.darkBrown,
-                    ),
-                  ),
-                ),
+                leading: TtBackButton(onPressed: () => context.pop()),
               ),
               const SizedBox(height: 8),
               Text(

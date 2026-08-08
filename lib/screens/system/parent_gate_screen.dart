@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
+import '../../widgets/back_button_circle.dart';
 import '../../widgets/bounce_button.dart';
 
 /// Simple math parent gate — tap-hold style for settings/store only.
@@ -44,19 +45,7 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
             children: [
               Align(
                 alignment: Alignment.centerLeft,
-                child: BounceButton(
-                  onPressed: () => context.pop(),
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: TTColors.creamWhite,
-                      boxShadow: TTShadows.soft,
-                    ),
-                    child: const Icon(Icons.close_rounded),
-                  ),
-                ),
+                child: TtBackButton(onPressed: () => context.pop()),
               ),
               const Spacer(),
               Text('Grown-ups only', style: TTTypography.headline()),
