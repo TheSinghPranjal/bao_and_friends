@@ -49,6 +49,33 @@ abstract final class DrinkWaterRules {
   }
 }
 
+/// Feed reward math — tap floating foods (same loop shape as Drink Water).
+abstract final class FeedRules {
+  static const int maxFoods = 9;
+  static const int foodsForFullReward = 9;
+  static const Duration reminderInterval = Duration(hours: 4);
+
+  /// 1 food → 1 star. All required foods → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForFoods(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep feeding Bao!');
+    }
+    if (completed >= foodsForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Yum! Bao feels happy and full!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Yummy! One star for you!'
+          : 'Great feeding! Keep going!',
+    );
+  }
+}
+
 /// Chore cooldown timers (positive waiting, never punishment).
 abstract final class ChoreTimers {
   static const Duration brushTeeth = Duration(hours: 6);
