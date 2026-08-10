@@ -8,6 +8,7 @@ import '../screens/drink/drink_water_screen.dart';
 import '../screens/feed/drink_milk_screen.dart';
 import '../screens/feed/eat_apple_screen.dart';
 import '../screens/feed/eat_banana_screen.dart';
+import '../screens/feed/eat_veggies_screen.dart';
 import '../screens/feed/feed_screen.dart';
 import '../screens/hubs/module_hubs.dart';
 import '../screens/shared/module_hub_screen.dart';
@@ -56,6 +57,10 @@ GoRouter createAppRouter({bool skipSplash = false}) {
       GoRoute(
         path: '/eat-banana',
         builder: (context, state) => const EatBananaScreen(),
+      ),
+      GoRoute(
+        path: '/eat-veggies',
+        builder: (context, state) => const EatVeggiesScreen(),
       ),
       GoRoute(
         path: '/play',
