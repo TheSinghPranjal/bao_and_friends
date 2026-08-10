@@ -49,10 +49,91 @@ abstract final class DrinkWaterRules {
   }
 }
 
+/// Drink Milk reward math (same loop as Drink Water; reached from Feed).
+abstract final class DrinkMilkRules {
+  static const int maxGlasses = 4;
+  static const int glassesForFullReward = 4;
+  static const Duration reminderInterval = Duration(hours: 4);
+
+  /// 1 glass → 1 star. All required glasses → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForGlasses(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep sipping!');
+    }
+    if (completed >= glassesForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao loves that milk!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Yummy milk! One star for you!'
+          : 'Great sipping! Keep going!',
+    );
+  }
+}
+
+/// Eat Apple reward math (same loop as Drink Water; reached from Feed).
+abstract final class EatAppleRules {
+  static const int maxApples = 4;
+  static const int applesForFullReward = 4;
+  static const Duration reminderInterval = Duration(hours: 4);
+
+  /// 1 apple → 1 star. All required apples → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForApples(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep munching!');
+    }
+    if (completed >= applesForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao loves that apple!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Yummy apple! One star for you!'
+          : 'Great munching! Keep going!',
+    );
+  }
+}
+
+/// Eat Banana reward math (same loop as Eat Apple; reached from Feed).
+abstract final class EatBananaRules {
+  static const int maxBananas = 4;
+  static const int bananasForFullReward = 4;
+  static const Duration reminderInterval = Duration(hours: 4);
+
+  /// 1 banana → 1 star. All required bananas → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForBananas(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep munching!');
+    }
+    if (completed >= bananasForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao loves that banana!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Yummy banana! One star for you!'
+          : 'Great munching! Keep going!',
+    );
+  }
+}
+
 /// Feed reward math — tap floating foods (same loop shape as Drink Water).
 abstract final class FeedRules {
-  static const int maxFoods = 9;
-  static const int foodsForFullReward = 9;
+  static const int maxFoods = 10;
+  static const int foodsForFullReward = 10;
   static const Duration reminderInterval = Duration(hours: 4);
 
   /// 1 food → 1 star. All required foods → 3 stars + 1 Magic Bean.
@@ -74,6 +155,44 @@ abstract final class FeedRules {
           : 'Great feeding! Keep going!',
     );
   }
+}
+
+/// Chores reward math — tap floating chores (same loop shape as Feed).
+abstract final class ChoresRules {
+  static const int maxChores = 9;
+  static const int choresForFullReward = 9;
+  static const Duration reminderInterval = Duration(hours: 4);
+
+  /// 1 chore → 1 star. All required chores → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForChores(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep helping Bao!');
+    }
+    if (completed >= choresForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing helper! Bao is so proud!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Great job! One star for you!'
+          : 'Great helping! Keep going!',
+    );
+  }
+}
+
+/// Wake Up — Bao sleeps every [sleepInterval]; wake resets the timer.
+abstract final class WakeUpRules {
+  static const Duration sleepInterval = Duration(hours: 1);
+
+  static const RewardResult reward = RewardResult(
+    stars: 1,
+    magicBeans: 0,
+    message: 'Good morning! Bao is awake and ready!',
+  );
 }
 
 /// Chore cooldown timers (positive waiting, never punishment).

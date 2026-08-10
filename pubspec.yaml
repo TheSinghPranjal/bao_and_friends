@@ -37,6 +37,7 @@ dependencies:
   google_fonts: ^8.2.1
   go_router: ^17.4.0
   video_player: ^2.11.1
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
@@ -78,8 +79,16 @@ flutter:
   assets:
     - assets/videos/splash_screen_bg_video.mp4
     - assets/videos/bao_character_screen_bg_video.mp4
-    - assets/videos/bao_not_drinking_water.mp4
-    - assets/videos/bao_drinking_water.mp4
+    - assets/videos/bao_sleeping.mp4
+    - assets/videos/bao_waking_up.mp4
+    - assets/videos/feed/water/bao_not_drinking_water.mp4
+    - assets/videos/feed/water/bao_drinking_water.mp4
+    - assets/videos/feed/milk/bao_not_drinking_milk_video.mp4
+    - assets/videos/feed/milk/bao_drinking_milk_video.mp4
+    - assets/videos/feed/apple/bao_not_eating_apple.mp4
+    - assets/videos/feed/apple/bao_eating_apple.mp4
+    - assets/videos/feed/banana/bao_not_eating_banana.mp4
+    - assets/videos/feed/banana/bao_eating_banana.mp4
     - assets/videos/bao_not_feeding.mp4
     - assets/images/logo_splash_screen.png
     - assets/images/character_select_bg.png
