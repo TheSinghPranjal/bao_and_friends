@@ -102,7 +102,7 @@ class _FeedScreenState extends State<FeedScreen>
   Future<void> _tapFood(int index) async {
     if (_celebrating || _eaten.contains(index)) return;
 
-    // Milk / Apple / Banana / Veggies open their own activity screens.
+    // Milk / Apple / Banana / Veggies / Sandwich open their own activity screens.
     if (index == 0) {
       final completed = await context.push<bool>('/drink-milk');
       if (!mounted || completed != true) return;
@@ -117,6 +117,10 @@ class _FeedScreenState extends State<FeedScreen>
       setState(() => _eaten.add(index));
     } else if (index == 4) {
       final completed = await context.push<bool>('/eat-veggies');
+      if (!mounted || completed != true) return;
+      setState(() => _eaten.add(index));
+    } else if (index == 7) {
+      final completed = await context.push<bool>('/eat-sandwich');
       if (!mounted || completed != true) return;
       setState(() => _eaten.add(index));
     } else {
