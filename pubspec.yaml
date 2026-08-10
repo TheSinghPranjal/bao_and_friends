@@ -89,6 +89,8 @@ flutter:
     - assets/videos/feed/apple/bao_eating_apple.mp4
     - assets/videos/feed/banana/bao_not_eating_banana.mp4
     - assets/videos/feed/banana/bao_eating_banana.mp4
+    - assets/videos/feed/veggies/bao_not_eating_veggies.mp4
+    - assets/videos/feed/veggies/bao_eating_veggies.mp4
     - assets/videos/bao_not_feeding.mp4
     - assets/images/logo_splash_screen.png
     - assets/images/character_select_bg.png
