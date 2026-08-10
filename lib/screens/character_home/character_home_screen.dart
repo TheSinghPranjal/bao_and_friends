@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/character.dart';
+import '../../services/sleep_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -23,9 +25,10 @@ class CharacterHomeScreen extends StatefulWidget {
 }
 
 class _CharacterHomeScreenState extends State<CharacterHomeScreen>
-    with SingleTickerProviderStateMixin {
-  static const _baoVideoAsset =
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  static const _baoAwakeVideoAsset =
       'assets/videos/bao_character_screen_bg_video.mp4';
+  static const _baoSleepingVideoAsset = 'assets/videos/bao_sleeping.mp4';
 
   late final AnimationController _float;
   late FamilyCharacter character;
@@ -35,6 +38,9 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
 
   VideoPlayerController? _video;
   bool _videoReady = false;
+  bool _isSleeping = false;
+  bool _sleepLoaded = false;
+  Timer? _sleepCheckTimer;
 
   /// Left column then right column — keeps Bao (center of the video) clear.
   static const _leftBubbles = <_BubbleSpec>[
@@ -56,6 +62,12 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       TTColors.bambooLight,
       '/chores',
     ),
+    _BubbleSpec(
+      'Wake Up',
+      Icons.wb_twilight_rounded,
+      TTColors.goldenBright,
+      '/wake-up',
+    ),
   ];
 
   bool get _isBao => character.id == CharacterId.bao;
@@ -63,6 +75,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final id = CharacterId.values.firstWhere(
       (e) => e.name == widget.characterId,
       orElse: () => CharacterId.bao,
@@ -73,13 +86,53 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       duration: const Duration(seconds: 4),
     )..repeat(reverse: true);
 
-    if (_isBao) {
-      _initVideo();
+    unawaited(_refreshSleepState(initVideo: true));
+    _sleepCheckTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => unawaited(_refreshSleepState()),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshSleepState());
     }
   }
 
-  Future<void> _initVideo() async {
-    final controller = VideoPlayerController.asset(_baoVideoAsset);
+  Future<void> _refreshSleepState({bool initVideo = false}) async {
+    final sleeping = await SleepStore.isSleeping();
+    if (!mounted) return;
+
+    final changed = sleeping != _isSleeping || !_sleepLoaded;
+    setState(() {
+      _isSleeping = sleeping;
+      _sleepLoaded = true;
+    });
+
+    if (_isBao && (initVideo || (changed && sleeping != _videoShowsSleeping))) {
+      await _initVideo(sleeping: sleeping);
+    }
+  }
+
+  bool get _videoShowsSleeping {
+    final src = _video?.dataSource ?? '';
+    return src.contains('bao_sleeping');
+  }
+
+  Future<void> _initVideo({required bool sleeping}) async {
+    final asset = sleeping ? _baoSleepingVideoAsset : _baoAwakeVideoAsset;
+    final previous = _video;
+
+    if (previous != null &&
+        previous.value.isInitialized &&
+        _videoShowsSleeping == sleeping) {
+      return;
+    }
+
+    previous?.pause();
+
+    final controller = VideoPlayerController.asset(asset);
     try {
       await controller.initialize();
       if (!mounted) {
@@ -89,9 +142,16 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       await controller.setLooping(true);
       await controller.setVolume(0);
       await controller.play();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
       setState(() {
         _video = controller;
         _videoReady = true;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        previous?.dispose();
       });
     } catch (_) {
       await controller.dispose();
@@ -100,12 +160,44 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _sleepCheckTimer?.cancel();
     _float.dispose();
-    _video?.dispose();
+    final video = _video;
+    _video = null;
+    _videoReady = false;
+    video?.pause();
+    video?.dispose();
     super.dispose();
   }
 
-  void _openBubble(_BubbleSpec b) {
+  Future<void> _openBubble(_BubbleSpec b) async {
+    if (b.route == '/wake-up') {
+      if (!_isSleeping) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Bao is already awake! Come back in a bit.',
+              style: TTTypography.body(color: TTColors.creamWhite),
+            ),
+            backgroundColor: TTColors.darkBrown,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+      final woke = await context.push<bool>(
+        '${b.route}?character=${character.id.name}',
+      );
+      if (!mounted) return;
+      if (woke == true) {
+        await _refreshSleepState();
+      }
+      return;
+    }
+
     context.push('${b.route}?character=${character.id.name}');
   }
 
@@ -166,6 +258,14 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
                     '${character.name} is Coming Soon!',
                     style: TTTypography.headline(),
                   ),
+                )
+              else if (_isBao && _sleepLoaded && _isSleeping)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Bao is sleeping — tap Wake Up!',
+                    style: TTTypography.subtitle(color: TTColors.darkBrown),
+                  ),
                 ),
               Expanded(
                 child: AnimatedBuilder(
@@ -188,7 +288,11 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
                                 count: _leftBubbles.length,
                                 screenSize: Size(w, h),
                                 t: t,
-                                onTap: () => _openBubble(_leftBubbles[i]),
+                                emphasized: false,
+                                dimmed: false,
+                                onTap: () => unawaited(
+                                  _openBubble(_leftBubbles[i]),
+                                ),
                               ),
 
                             // ---- RIGHT SIDE BUBBLES ----
@@ -200,7 +304,15 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
                                 count: _rightBubbles.length,
                                 screenSize: Size(w, h),
                                 t: t,
-                                onTap: () => _openBubble(_rightBubbles[i]),
+                                emphasized: _rightBubbles[i].route ==
+                                        '/wake-up' &&
+                                    _isSleeping,
+                                dimmed: _rightBubbles[i].route ==
+                                        '/wake-up' &&
+                                    !_isSleeping,
+                                onTap: () => unawaited(
+                                  _openBubble(_rightBubbles[i]),
+                                ),
                               ),
 
                             // For non-Bao characters (no video yet), keep a
@@ -284,7 +396,10 @@ class _LoopingVideoBackground extends StatelessWidget {
             child: SizedBox(
               width: size.width > 0 ? size.width : 393,
               height: size.height > 0 ? size.height : 852,
-              child: VideoPlayer(controller!),
+              child: VideoPlayer(
+                key: ValueKey(controller),
+                controller!,
+              ),
             ),
           ),
         ),
@@ -316,6 +431,8 @@ class _SideBubble extends StatelessWidget {
     required this.screenSize,
     required this.t,
     required this.onTap,
+    this.emphasized = false,
+    this.dimmed = false,
   });
 
   final _BubbleSpec spec;
@@ -325,6 +442,8 @@ class _SideBubble extends StatelessWidget {
   final Size screenSize;
   final double t;
   final VoidCallback onTap;
+  final bool emphasized;
+  final bool dimmed;
 
   static const double _bubbleSize = 92;
 
@@ -343,32 +462,45 @@ class _SideBubble extends StatelessWidget {
         ? edgePad
         : screenSize.width - edgePad - _bubbleSize;
 
+    final scale = emphasized ? 1.08 : 1.0;
+
     return Positioned(
       left: x,
       top: y,
-      child: BounceButton(
-        onPressed: onTap,
-        semanticLabel: spec.label,
-        child: Container(
-          width: _bubbleSize,
-          height: _bubbleSize,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: spec.color,
-            border: Border.all(color: TTColors.creamWhite, width: 4),
-            boxShadow: TTShadows.soft,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(spec.icon, color: TTColors.darkBrown, size: 30),
-              const SizedBox(height: 2),
-              Text(
-                spec.label,
-                style: TTTypography.caption(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w800),
+      child: Opacity(
+        opacity: dimmed ? 0.45 : 1.0,
+        child: Transform.scale(
+          scale: scale,
+          child: BounceButton(
+            onPressed: onTap,
+            semanticLabel: spec.label,
+            child: Container(
+              width: _bubbleSize,
+              height: _bubbleSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: spec.color,
+                border: Border.all(
+                  color: emphasized ? TTColors.golden : TTColors.creamWhite,
+                  width: emphasized ? 5 : 4,
+                ),
+                boxShadow: emphasized
+                    ? TTShadows.glow(TTColors.golden)
+                    : TTShadows.soft,
               ),
-            ],
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(spec.icon, color: TTColors.darkBrown, size: 30),
+                  const SizedBox(height: 2),
+                  Text(
+                    spec.label,
+                    style: TTTypography.caption(color: TTColors.darkBrown)
+                        .copyWith(fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

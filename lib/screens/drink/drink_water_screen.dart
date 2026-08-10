@@ -23,8 +23,10 @@ class DrinkWaterScreen extends StatefulWidget {
 
 class _DrinkWaterScreenState extends State<DrinkWaterScreen>
     with TickerProviderStateMixin {
-  static const _idleVideoAsset = 'assets/videos/bao_not_drinking_water.mp4';
-  static const _drinkingVideoAsset = 'assets/videos/bao_drinking_water.mp4';
+  static const _idleVideoAsset =
+      'assets/videos/feed/water/bao_not_drinking_water.mp4';
+  static const _drinkingVideoAsset =
+      'assets/videos/feed/water/bao_drinking_water.mp4';
   static const _crossfadeDuration = Duration(milliseconds: 550);
 
   late final AnimationController _float;
