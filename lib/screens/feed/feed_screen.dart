@@ -13,7 +13,7 @@ import '../../widgets/bounce_button.dart';
 import '../../widgets/status_bar.dart';
 import '../drink/drink_water_screen.dart' show RewardPopup;
 
-/// Feed Activity — tap floating food bubbles (max 9).
+/// Feed Activity — tap floating food bubbles (max 10).
 /// Same float + bubble feel as Drink Water. Idle Bao video behind.
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -42,6 +42,7 @@ class _FeedScreenState extends State<FeedScreen>
     _FeedItem('Veggies', Icons.grass_rounded, Color(0xFF81C784)),
     _FeedItem('Soup', Icons.soup_kitchen_rounded, Color(0xFFFFB74D)),
     _FeedItem('Egg', Icons.egg_rounded, Color(0xFFFFF176)),
+    _FeedItem('Sandwich', Icons.lunch_dining_rounded, Color(0xFFE6B87A)),
     _FeedItem('Bread', Icons.bakery_dining_rounded, Color(0xFFD7CCC8)),
     _FeedItem('Fruit', Icons.food_bank_rounded, Color(0xFFF48FB1)),
   ];
@@ -74,6 +75,10 @@ class _FeedScreenState extends State<FeedScreen>
       await idle.setLooping(true);
       await idle.setVolume(0);
       await idle.play();
+      if (!mounted) {
+        await idle.dispose();
+        return;
+      }
       setState(() {
         _idleVideo = idle;
         _idleReady = true;
@@ -86,13 +91,33 @@ class _FeedScreenState extends State<FeedScreen>
   @override
   void dispose() {
     _float.dispose();
-    _idleVideo?.dispose();
+    final video = _idleVideo;
+    _idleVideo = null;
+    _idleReady = false;
+    video?.pause();
+    video?.dispose();
     super.dispose();
   }
 
   Future<void> _tapFood(int index) async {
     if (_celebrating || _eaten.contains(index)) return;
-    setState(() => _eaten.add(index));
+
+    // Milk / Apple / Banana open their own activity screens (same loop as Drink Water).
+    if (index == 0) {
+      final completed = await context.push<bool>('/drink-milk');
+      if (!mounted || completed != true) return;
+      setState(() => _eaten.add(index));
+    } else if (index == 1) {
+      final completed = await context.push<bool>('/eat-apple');
+      if (!mounted || completed != true) return;
+      setState(() => _eaten.add(index));
+    } else if (index == 2) {
+      final completed = await context.push<bool>('/eat-banana');
+      if (!mounted || completed != true) return;
+      setState(() => _eaten.add(index));
+    } else {
+      setState(() => _eaten.add(index));
+    }
 
     if (_eaten.length >= FeedRules.foodsForFullReward) {
       setState(() => _celebrating = true);
@@ -202,13 +227,12 @@ class _FeedScreenState extends State<FeedScreen>
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        // Same bob as Drink Water; two gentle arcs so all 9
-                        // foods stay tappable without stacking.
+                        // Two rows of 5 so all 10 foods stay tappable.
                         return Stack(
                           children: List.generate(_foods.length, (i) {
-                            final row = i < 5 ? 0 : 1;
-                            final col = i < 5 ? i : i - 5;
-                            final colsInRow = i < 5 ? 5 : 4;
+                            const colsInRow = 5;
+                            final row = i ~/ colsInRow;
+                            final col = i % colsInRow;
                             final t = colsInRow <= 1
                                 ? 0.5
                                 : col / (colsInRow - 1);
@@ -278,7 +302,10 @@ class _FeedVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(controller!),
+          child: VideoPlayer(
+            key: ValueKey(controller),
+            controller!,
+          ),
         ),
       ),
     );
