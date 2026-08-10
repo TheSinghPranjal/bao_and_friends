@@ -62,6 +62,10 @@ abstract final class TTColors {
   static const veggiesSoft = Color(0xFFC5E1A5);
   static const veggiesWarm = Color(0xFF81C784);
   static const veggiesDeep = Color(0xFF388E3C);
+  static const sandwichCream = Color(0xFFFFF8E1);
+  static const sandwichSoft = Color(0xFFE6C89A);
+  static const sandwichWarm = Color(0xFFD4A574);
+  static const sandwichDeep = Color(0xFF8D6E63);
 
   // Status / needs (always positive)
   static const ready = Color(0xFF7CB342);

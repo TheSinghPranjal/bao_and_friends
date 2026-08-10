@@ -157,6 +157,33 @@ abstract final class EatVeggiesRules {
   }
 }
 
+/// Eat Sandwich reward math (same loop as Eat Apple; reached from Feed).
+abstract final class EatSandwichRules {
+  static const int maxSandwiches = 4;
+  static const int sandwichesForFullReward = 4;
+  static const Duration reminderInterval = Duration(hours: 4);
+
+  /// 1 sandwich → 1 star. All required sandwiches → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForSandwiches(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep munching!');
+    }
+    if (completed >= sandwichesForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao loves that sandwich!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Yummy sandwich! One star for you!'
+          : 'Great munching! Keep going!',
+    );
+  }
+}
+
 /// Feed reward math — tap floating foods (same loop shape as Drink Water).
 abstract final class FeedRules {
   static const int maxFoods = 10;
