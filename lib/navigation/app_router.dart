@@ -2,7 +2,12 @@ import 'package:go_router/go_router.dart';
 
 import '../screens/character_home/character_home_screen.dart';
 import '../screens/character_selection/character_selection_screen.dart';
+import '../screens/chores/chores_screen.dart';
+import '../screens/chores/wake_up_screen.dart';
 import '../screens/drink/drink_water_screen.dart';
+import '../screens/feed/drink_milk_screen.dart';
+import '../screens/feed/eat_apple_screen.dart';
+import '../screens/feed/eat_banana_screen.dart';
 import '../screens/feed/feed_screen.dart';
 import '../screens/hubs/module_hubs.dart';
 import '../screens/shared/module_hub_screen.dart';
@@ -41,12 +46,28 @@ GoRouter createAppRouter({bool skipSplash = false}) {
         builder: (context, state) => const FeedScreen(),
       ),
       GoRoute(
+        path: '/drink-milk',
+        builder: (context, state) => const DrinkMilkScreen(),
+      ),
+      GoRoute(
+        path: '/eat-apple',
+        builder: (context, state) => const EatAppleScreen(),
+      ),
+      GoRoute(
+        path: '/eat-banana',
+        builder: (context, state) => const EatBananaScreen(),
+      ),
+      GoRoute(
         path: '/play',
         builder: (context, state) => const PlayHubScreen(),
       ),
       GoRoute(
         path: '/chores',
-        builder: (context, state) => const ChoresHubScreen(),
+        builder: (context, state) => const ChoresScreen(),
+      ),
+      GoRoute(
+        path: '/wake-up',
+        builder: (context, state) => const WakeUpScreen(),
       ),
       GoRoute(
         path: '/drink',
