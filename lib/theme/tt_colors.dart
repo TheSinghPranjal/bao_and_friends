@@ -47,6 +47,17 @@ abstract final class TTColors {
   static const parkSkyBottom = Color(0xFFF5D0B0);
   static const waterBlue = Color(0xFF6EC6E8);
   static const waterDrop = Color(0xFF4DB8E8);
+  static const milkCream = Color(0xFFFFF4E0);
+  static const milkSoft = Color(0xFFFFE8C8);
+  static const milkWarm = Color(0xFFE8C89A);
+  static const appleCream = Color(0xFFFFF0EB);
+  static const appleSoft = Color(0xFFFFD0C4);
+  static const appleWarm = Color(0xFFE57373);
+  static const appleDeep = Color(0xFFC62828);
+  static const bananaCream = Color(0xFFFFFDE7);
+  static const bananaSoft = Color(0xFFFFF176);
+  static const bananaWarm = Color(0xFFFFD54F);
+  static const bananaDeep = Color(0xFFF9A825);
 
   // Status / needs (always positive)
   static const ready = Color(0xFF7CB342);
