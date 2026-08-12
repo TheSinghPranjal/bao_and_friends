@@ -66,6 +66,22 @@ abstract final class TTColors {
   static const sandwichSoft = Color(0xFFE6C89A);
   static const sandwichWarm = Color(0xFFD4A574);
   static const sandwichDeep = Color(0xFF8D6E63);
+  static const bedCream = Color(0xFFF3E5F5);
+  static const bedSoft = Color(0xFFD1C4E9);
+  static const bedWarm = Color(0xFFB39DDB);
+  static const bedDeep = Color(0xFF7E57C2);
+  static const teethCream = Color(0xFFE0F7FA);
+  static const teethSoft = Color(0xFFB2EBF2);
+  static const teethWarm = Color(0xFF80DEEA);
+  static const teethDeep = Color(0xFF00ACC1);
+  static const washCream = Color(0xFFE3F2FD);
+  static const washSoft = Color(0xFFBBDEFB);
+  static const washWarm = Color(0xFF90CAF9);
+  static const washDeep = Color(0xFF1E88E5);
+  static const combCream = Color(0xFFFFF8E1);
+  static const combSoft = Color(0xFFFFE0B2);
+  static const combWarm = Color(0xFFFFCC80);
+  static const combDeep = Color(0xFFEF6C00);
 
   // Status / needs (always positive)
   static const ready = Color(0xFF7CB342);
