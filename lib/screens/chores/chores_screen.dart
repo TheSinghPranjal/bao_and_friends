@@ -95,7 +95,26 @@ class _ChoresScreenState extends State<ChoresScreen>
 
   Future<void> _tapChore(int index) async {
     if (_celebrating || _done.contains(index)) return;
-    setState(() => _done.add(index));
+
+    if (index == 0) {
+      final completed = await context.push<bool>('/make-bed');
+      if (!mounted || completed != true) return;
+      setState(() => _done.add(index));
+    } else if (index == 1) {
+      final completed = await context.push<bool>('/brush-teeth');
+      if (!mounted || completed != true) return;
+      setState(() => _done.add(index));
+    } else if (index == 2) {
+      final completed = await context.push<bool>('/wash-face');
+      if (!mounted || completed != true) return;
+      setState(() => _done.add(index));
+    } else if (index == 3) {
+      final completed = await context.push<bool>('/comb-hair');
+      if (!mounted || completed != true) return;
+      setState(() => _done.add(index));
+    } else {
+      setState(() => _done.add(index));
+    }
 
     if (_done.length >= ChoresRules.choresForFullReward) {
       setState(() => _celebrating = true);
