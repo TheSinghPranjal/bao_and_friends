@@ -93,6 +93,14 @@ flutter:
     - assets/videos/feed/veggies/bao_eating_veggies.mp4
     - assets/videos/feed/sandwich/bao_not_eating_sandwich.mp4
     - assets/videos/feed/sandwich/bao_eating_sandwich.mp4
+    - assets/videos/chore/make_bed/bao_not_making_bed.mp4
+    - assets/videos/chore/make_bed/bao_making_bed.mp4
+    - assets/videos/chore/brush/bao_not_brushing_teeth.mp4
+    - assets/videos/chore/brush/bao_brushing_teeth.mp4
+    - assets/videos/chore/wash_face/bao_not_washing_his_face.mp4
+    - assets/videos/chore/wash_face/bao_washing_face.mp4
+    - assets/videos/chore/comb_hair/bao_not_coming_hair.mp4
+    - assets/videos/chore/comb_hair/bao_combing_hair.mp4
     - assets/videos/bao_not_feeding.mp4
     - assets/images/logo_splash_screen.png
     - assets/images/character_select_bg.png

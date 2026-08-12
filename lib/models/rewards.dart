@@ -238,6 +238,114 @@ abstract final class ChoresRules {
   }
 }
 
+/// Comb Hair reward math (same loop as Make Bed; reached from Chores).
+abstract final class CombHairRules {
+  static const int maxSteps = 4;
+  static const int stepsForFullReward = 4;
+  static const Duration reminderInterval = Duration(hours: 8);
+
+  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForSteps(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep combing!');
+    }
+    if (completed >= stepsForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao\'s hair looks so neat!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Nice combing! One star for you!'
+          : 'Great combing! Keep going!',
+    );
+  }
+}
+
+/// Wash Face reward math (same loop as Make Bed; reached from Chores).
+abstract final class WashFaceRules {
+  static const int maxSteps = 4;
+  static const int stepsForFullReward = 4;
+  static const Duration reminderInterval = Duration(hours: 8);
+
+  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForSteps(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep washing!');
+    }
+    if (completed >= stepsForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao\'s face feels so fresh!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Nice washing! One star for you!'
+          : 'Great washing! Keep going!',
+    );
+  }
+}
+
+/// Brush Teeth reward math (same loop as Make Bed; reached from Chores).
+abstract final class BrushTeethRules {
+  static const int maxSteps = 4;
+  static const int stepsForFullReward = 4;
+  static const Duration reminderInterval = Duration(hours: 6);
+
+  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForSteps(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep brushing!');
+    }
+    if (completed >= stepsForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao\'s teeth are sparkling!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Nice brushing! One star for you!'
+          : 'Great brushing! Keep going!',
+    );
+  }
+}
+
+/// Make Bed reward math (same loop as Eat Apple; reached from Chores).
+abstract final class MakeBedRules {
+  static const int maxSteps = 4;
+  static const int stepsForFullReward = 4;
+  static const Duration reminderInterval = Duration(hours: 8);
+
+  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForSteps(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep helping!');
+    }
+    if (completed >= stepsForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! The bed looks so cozy!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Nice work! One star for you!'
+          : 'Great helping! Keep going!',
+    );
+  }
+}
+
 /// Wake Up — Bao sleeps every [sleepInterval]; wake resets the timer.
 abstract final class WakeUpRules {
   static const Duration sleepInterval = Duration(hours: 1);
