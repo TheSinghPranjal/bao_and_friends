@@ -3,6 +3,10 @@ import 'package:go_router/go_router.dart';
 import '../screens/character_home/character_home_screen.dart';
 import '../screens/character_selection/character_selection_screen.dart';
 import '../screens/chores/chores_screen.dart';
+import '../screens/chores/brush_teeth_screen.dart';
+import '../screens/chores/comb_hair_screen.dart';
+import '../screens/chores/make_bed_screen.dart';
+import '../screens/chores/wash_face_screen.dart';
 import '../screens/chores/wake_up_screen.dart';
 import '../screens/drink/drink_water_screen.dart';
 import '../screens/feed/drink_milk_screen.dart';
@@ -74,6 +78,22 @@ GoRouter createAppRouter({bool skipSplash = false}) {
       GoRoute(
         path: '/chores',
         builder: (context, state) => const ChoresScreen(),
+      ),
+      GoRoute(
+        path: '/make-bed',
+        builder: (context, state) => const MakeBedScreen(),
+      ),
+      GoRoute(
+        path: '/brush-teeth',
+        builder: (context, state) => const BrushTeethScreen(),
+      ),
+      GoRoute(
+        path: '/wash-face',
+        builder: (context, state) => const WashFaceScreen(),
+      ),
+      GoRoute(
+        path: '/comb-hair',
+        builder: (context, state) => const CombHairScreen(),
       ),
       GoRoute(
         path: '/wake-up',
