@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -9,12 +8,12 @@ import '../../models/rewards.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
-import '../../widgets/bounce_button.dart';
+import '../../widgets/item_tray_bar.dart';
 import '../../widgets/status_bar.dart';
 import '../drink/drink_water_screen.dart' show RewardPopup;
 
-/// Feed Activity — tap floating food bubbles (max 10).
-/// Same float + bubble feel as Drink Water. Idle Bao video behind.
+/// Feed Activity — pick foods from a bottom tray (5 per page).
+/// Idle Bao video behind.
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
 
@@ -30,8 +29,7 @@ class _FeedItem {
   final Color accent;
 }
 
-class _FeedScreenState extends State<FeedScreen>
-    with SingleTickerProviderStateMixin {
+class _FeedScreenState extends State<FeedScreen> {
   static const _idleVideoAsset = 'assets/videos/bao_not_feeding.mp4';
 
   static const _foods = <_FeedItem>[
@@ -47,7 +45,6 @@ class _FeedScreenState extends State<FeedScreen>
     _FeedItem('Fruit', Icons.food_bank_rounded, Color(0xFFF48FB1)),
   ];
 
-  late final AnimationController _float;
   final Set<int> _eaten = {};
   bool _celebrating = false;
 
@@ -57,10 +54,6 @@ class _FeedScreenState extends State<FeedScreen>
   @override
   void initState() {
     super.initState();
-    _float = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
     unawaited(_initVideo());
   }
 
@@ -90,7 +83,6 @@ class _FeedScreenState extends State<FeedScreen>
 
   @override
   void dispose() {
-    _float.dispose();
     final video = _idleVideo;
     _idleVideo = null;
     _idleReady = false;
@@ -168,7 +160,6 @@ class _FeedScreenState extends State<FeedScreen>
   @override
   Widget build(BuildContext context) {
     final remaining = FeedRules.maxFoods - _eaten.length;
-    const bubbleSize = 84.0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFE0D0),
@@ -192,7 +183,6 @@ class _FeedScreenState extends State<FeedScreen>
             controller: _idleVideo,
             ready: _idleReady,
           ),
-          // Soft top wash so status + title stay readable over the video.
           IgnorePointer(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -229,55 +219,19 @@ class _FeedScreenState extends State<FeedScreen>
                     : 'Tap the yummy foods ($remaining left)',
                 style: TTTypography.subtitle(),
               ),
-              Expanded(
-                child: AnimatedBuilder(
-                  animation: _float,
-                  builder: (context, _) {
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        // Two rows of 5 so all 10 foods stay tappable.
-                        return Stack(
-                          children: List.generate(_foods.length, (i) {
-                            const colsInRow = 5;
-                            final row = i ~/ colsInRow;
-                            final col = i % colsInRow;
-                            final t = colsInRow <= 1
-                                ? 0.5
-                                : col / (colsInRow - 1);
-                            final bob = math.sin(
-                                    (_float.value + i * 0.25) * math.pi * 2) *
-                                10;
-                            final x = constraints.maxWidth *
-                                    (0.10 + t * 0.80) -
-                                (bubbleSize / 2);
-                            final y = constraints.maxHeight *
-                                    (0.14 + row * 0.34) +
-                                math.sin(t * math.pi) * 18 +
-                                bob;
-                            final done = _eaten.contains(i);
-                            final food = _foods[i];
-                            return Positioned(
-                              left: x,
-                              top: y,
-                              child: BounceButton(
-                                onPressed:
-                                    done ? null : () => _tapFood(i),
-                                enabled: !done && !_celebrating,
-                                semanticLabel: food.label,
-                                child: FoodBubble(
-                                  label: food.label,
-                                  icon: food.icon,
-                                  accent: food.accent,
-                                  eaten: done,
-                                ),
-                              ),
-                            );
-                          }),
-                        );
-                      },
-                    );
-                  },
-                ),
+              const Spacer(),
+              ItemTrayBar(
+                enabled: !_celebrating,
+                items: [
+                  for (var i = 0; i < _foods.length; i++)
+                    TrayItem(
+                      label: _foods[i].label,
+                      icon: _foods[i].icon,
+                      accent: _foods[i].accent,
+                      done: _eaten.contains(i),
+                      onTap: () => _tapFood(i),
+                    ),
+                ],
               ),
             ],
           ),
@@ -314,151 +268,6 @@ class _FeedVideoLayer extends StatelessWidget {
             key: ValueKey(controller),
             controller!,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Transparent glassy food bubble — same shape/float language as [WaterGlass].
-class FoodBubble extends StatelessWidget {
-  const FoodBubble({
-    super.key,
-    required this.label,
-    required this.icon,
-    required this.accent,
-    required this.eaten,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color accent;
-  final bool eaten;
-
-  static const double _size = 84;
-
-  @override
-  Widget build(BuildContext context) {
-    final tint = Color.lerp(accent, TTColors.momoCoral, 0.35)!;
-
-    return AnimatedScale(
-      scale: eaten ? 1.08 : 1.0,
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeOutBack,
-      child: SizedBox(
-        width: _size,
-        height: _size,
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            Container(
-              width: _size,
-              height: _size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  center: const Alignment(-0.35, -0.45),
-                  radius: 1.0,
-                  colors: eaten
-                      ? [
-                          Colors.white.withValues(alpha: 0.55),
-                          tint.withValues(alpha: 0.35),
-                          tint.withValues(alpha: 0.55),
-                        ]
-                      : [
-                          Colors.white.withValues(alpha: 0.85),
-                          tint.withValues(alpha: 0.22),
-                          tint.withValues(alpha: 0.40),
-                        ],
-                  stops: const [0.0, 0.55, 1.0],
-                ),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  width: 2.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: tint.withValues(alpha: 0.30),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
-                  ),
-                  BoxShadow(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    blurRadius: 4,
-                    spreadRadius: -2,
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              left: _size * 0.18,
-              top: _size * 0.16,
-              child: Transform.rotate(
-                angle: -0.5,
-                child: Container(
-                  width: _size * 0.30,
-                  height: _size * 0.14,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              right: _size * 0.20,
-              bottom: _size * 0.24,
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 28,
-                  color: eaten
-                      ? TTColors.bambooDeep.withValues(alpha: 0.95)
-                      : TTColors.darkBrown.withValues(alpha: 0.85),
-                ),
-                Text(
-                  label,
-                  style: TTTypography.caption(color: TTColors.darkBrown)
-                      .copyWith(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-            if (eaten)
-              Positioned(
-                right: -2,
-                bottom: -2,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: TTColors.bamboo,
-                    border: Border.all(color: TTColors.creamWhite, width: 2),
-                    boxShadow: TTShadows.soft,
-                  ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    size: 14,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-          ],
         ),
       ),
     );

@@ -211,6 +211,58 @@ abstract final class FeedRules {
   }
 }
 
+/// Play reward math — complete games from the Play tray (same loop as Chores).
+abstract final class PlayRules {
+  static const int maxGames = 12;
+  static const int gamesForFullReward = 12;
+  static const Duration reminderInterval = Duration(hours: 4);
+
+  /// 1 game → 1 star. All required games → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForGames(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep playing with Bao!');
+    }
+    if (completed >= gamesForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! What a fun play day!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Great game! One star for you!'
+          : 'Great playing! Keep going!',
+    );
+  }
+}
+
+/// Per-game play reward math (same loop as Make Bed; reached from Play).
+abstract final class PlayGameRules {
+  static const int maxSteps = 4;
+  static const int stepsForFullReward = 4;
+
+  static RewardResult rewardForGame(String gameLabel, int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep playing!');
+    }
+    if (completed >= stepsForFullReward) {
+      return RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao loved $gameLabel!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Fun $gameLabel! One star for you!'
+          : 'Great playing! Keep going!',
+    );
+  }
+}
+
 /// Chores reward math — tap floating chores (same loop shape as Feed).
 abstract final class ChoresRules {
   static const int maxChores = 9;
