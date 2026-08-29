@@ -7,12 +7,23 @@ class PlayGameSpec {
     required this.label,
     required this.icon,
     required this.accent,
+    this.idleVideoAsset,
+    this.actionVideoAsset,
   });
 
   final String id;
   final String label;
   final IconData icon;
   final Color accent;
+
+  /// Loops when idle; e.g. bao_not_playing_football_video.mp4
+  final String? idleVideoAsset;
+
+  /// Plays once per bubble tap; e.g. bao_playing_football_video.mp4
+  final String? actionVideoAsset;
+
+  bool get hasVideos =>
+      idleVideoAsset != null && actionVideoAsset != null;
 }
 
 /// All games shown in the Play tray (matches former Play hub list).
@@ -23,6 +34,10 @@ abstract final class PlayGames {
       label: 'Football',
       icon: Icons.sports_soccer_rounded,
       accent: Color(0xFF81C784),
+      idleVideoAsset:
+          'assets/videos/play/football/bao_not_playing_football_video.mp4',
+      actionVideoAsset:
+          'assets/videos/play/football/bao_playing_football_video.mp4',
     ),
     PlayGameSpec(
       id: 'cricket',

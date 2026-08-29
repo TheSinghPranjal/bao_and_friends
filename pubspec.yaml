@@ -102,6 +102,8 @@ flutter:
     - assets/videos/chore/comb_hair/bao_not_coming_hair.mp4
     - assets/videos/chore/comb_hair/bao_combing_hair.mp4
     - assets/videos/play/play_screen_video.mp4
+    - assets/videos/play/football/bao_not_playing_football_video.mp4
+    - assets/videos/play/football/bao_playing_football_video.mp4
     - assets/videos/bao_not_feeding.mp4
     - assets/images/logo_splash_screen.png
     - assets/images/character_select_bg.png

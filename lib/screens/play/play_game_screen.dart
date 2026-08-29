@@ -15,7 +15,7 @@ import '../../widgets/status_bar.dart';
 import '../drink/drink_water_screen.dart' show RewardPopup;
 
 /// Single game sub-activity (under Play) — tap floating play bubbles (max 4).
-/// Videos can be wired per game later; uses idle bedroom clip for now.
+/// Games with video assets crossfade idle → action like Feed/Chores activities.
 class PlayGameScreen extends StatefulWidget {
   const PlayGameScreen({super.key, required this.gameId});
 
@@ -27,17 +27,22 @@ class PlayGameScreen extends StatefulWidget {
 
 class _PlayGameScreenState extends State<PlayGameScreen>
     with TickerProviderStateMixin {
-  static const _idleVideoAsset =
+  static const _fallbackIdleVideoAsset =
       'assets/videos/bao_character_screen_bg_video.mp4';
+  static const _crossfadeDuration = Duration(milliseconds: 550);
 
   late final PlayGameSpec _game;
   late final AnimationController _float;
+  late final AnimationController _crossfade;
   final Set<int> _done = {};
   bool _celebrating = false;
   bool _actionInProgress = false;
 
   VideoPlayerController? _idleVideo;
+  VideoPlayerController? _actionVideo;
   bool _idleReady = false;
+  bool _actionReady = false;
+  VoidCallback? _actionListener;
 
   @override
   void initState() {
@@ -47,59 +52,146 @@ class _PlayGameScreenState extends State<PlayGameScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    unawaited(_initVideo());
+    _crossfade = AnimationController(
+      vsync: this,
+      duration: _crossfadeDuration,
+    );
+    unawaited(_initVideos());
   }
 
-  Future<void> _initVideo() async {
-    final idle = VideoPlayerController.asset(_idleVideoAsset);
+  Future<void> _initVideos() async {
+    final idleAsset = _game.idleVideoAsset ?? _fallbackIdleVideoAsset;
+    final idle = VideoPlayerController.asset(idleAsset);
+
+    VideoPlayerController? action;
+    if (_game.hasVideos) {
+      action = VideoPlayerController.asset(_game.actionVideoAsset!);
+    }
+
     try {
-      await idle.initialize();
+      if (action != null) {
+        await Future.wait([idle.initialize(), action.initialize()]);
+      } else {
+        await idle.initialize();
+      }
+
       if (!mounted) {
         await idle.dispose();
+        await action?.dispose();
         return;
       }
+
       await idle.setLooping(true);
       await idle.setVolume(0);
+      if (action != null) {
+        await action.setLooping(false);
+        await action.setVolume(0);
+
+        _actionListener = () {
+          final v = _actionVideo;
+          if (v == null || !_actionInProgress || !v.value.isInitialized) return;
+          final duration = v.value.duration;
+          if (duration <= Duration.zero) return;
+          final nearEnd = v.value.position >=
+              duration - const Duration(milliseconds: 80);
+          if (nearEnd && !v.value.isPlaying) {
+            unawaited(_finishAction());
+          }
+        };
+        action.addListener(_actionListener!);
+      }
+
       await idle.play();
+
       if (!mounted) {
         await idle.dispose();
+        await action?.dispose();
         return;
       }
+
       setState(() {
         _idleVideo = idle;
+        _actionVideo = action;
         _idleReady = true;
+        _actionReady = action != null;
       });
     } catch (_) {
       await idle.dispose();
+      await action?.dispose();
     }
+  }
+
+  Future<void> _playActionAnimation() async {
+    final action = _actionVideo;
+    if (action == null || !_actionReady || _actionInProgress) return;
+
+    setState(() => _actionInProgress = true);
+
+    await action.seekTo(Duration.zero);
+    await action.play();
+    if (!mounted) return;
+
+    await _crossfade.forward();
+  }
+
+  Future<void> _finishAction() async {
+    if (!_actionInProgress) return;
+
+    if (_celebrating) {
+      final action = _actionVideo;
+      if (action != null && action.value.isInitialized) {
+        await action.setLooping(true);
+        await action.seekTo(Duration.zero);
+        await action.play();
+      }
+      return;
+    }
+
+    final action = _actionVideo;
+    final idle = _idleVideo;
+
+    action?.pause();
+    if (idle != null && idle.value.isInitialized && !idle.value.isPlaying) {
+      await idle.play();
+    }
+    if (!mounted) return;
+
+    await _crossfade.reverse();
+    if (!mounted) return;
+    setState(() => _actionInProgress = false);
   }
 
   @override
   void dispose() {
+    final listener = _actionListener;
+    if (listener != null) {
+      _actionVideo?.removeListener(listener);
+    }
     _float.dispose();
-    final video = _idleVideo;
-    _idleVideo = null;
-    video?.pause();
-    video?.dispose();
+    _crossfade.dispose();
+    _idleVideo?.dispose();
+    _actionVideo?.dispose();
     super.dispose();
   }
 
   Future<void> _tapBubble(int index) async {
     if (_celebrating || _done.contains(index) || _actionInProgress) return;
 
-    setState(() {
-      _done.add(index);
-      _actionInProgress = true;
-    });
+    setState(() => _done.add(index));
 
-    await Future<void>.delayed(const Duration(milliseconds: 550));
-    if (!mounted) return;
-    setState(() => _actionInProgress = false);
+    if (_game.hasVideos) {
+      unawaited(_playActionAnimation());
+    } else {
+      setState(() => _actionInProgress = true);
+      await Future<void>.delayed(const Duration(milliseconds: 550));
+      if (!mounted) return;
+      setState(() => _actionInProgress = false);
+    }
 
     if (_done.length >= PlayGameRules.stepsForFullReward) {
       setState(() => _celebrating = true);
       final reward = PlayGameRules.rewardForGame(_game.label, _done.length);
-      await Future<void>.delayed(const Duration(milliseconds: 600));
+      await Future<void>.delayed(const Duration(milliseconds: 900));
       if (!mounted) return;
       await _showReward(reward);
       if (!mounted) return;
@@ -161,6 +253,20 @@ class _PlayGameScreenState extends State<PlayGameScreen>
             controller: _idleVideo,
             ready: _idleReady,
           ),
+          if (_game.hasVideos)
+            AnimatedBuilder(
+              animation: _crossfade,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: Curves.easeInOut.transform(_crossfade.value),
+                  child: child,
+                );
+              },
+              child: _PlayGameVideoLayer(
+                controller: _actionVideo,
+                ready: _actionReady,
+              ),
+            ),
           IgnorePointer(
             child: DecoratedBox(
               decoration: BoxDecoration(
