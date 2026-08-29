@@ -16,6 +16,8 @@ import '../screens/feed/eat_sandwich_screen.dart';
 import '../screens/feed/eat_veggies_screen.dart';
 import '../screens/feed/feed_screen.dart';
 import '../screens/hubs/module_hubs.dart';
+import '../screens/play/play_game_screen.dart';
+import '../screens/play/play_screen.dart';
 import '../screens/shared/module_hub_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/system/parent_gate_screen.dart';
@@ -73,7 +75,13 @@ GoRouter createAppRouter({bool skipSplash = false}) {
       ),
       GoRoute(
         path: '/play',
-        builder: (context, state) => const PlayHubScreen(),
+        builder: (context, state) => const PlayScreen(),
+      ),
+      GoRoute(
+        path: '/play-game/:gameId',
+        builder: (context, state) => PlayGameScreen(
+          gameId: state.pathParameters['gameId'] ?? 'football',
+        ),
       ),
       GoRoute(
         path: '/chores',
