@@ -44,6 +44,10 @@ abstract final class PlayGames {
       label: 'Cricket',
       icon: Icons.sports_cricket_rounded,
       accent: Color(0xFF4DB6AC),
+      idleVideoAsset:
+          'assets/videos/play/cricket/bao_not_playing_cricket_video.mp4',
+      actionVideoAsset:
+          'assets/videos/play/cricket/bao_playing_cricket_video.mp4',
     ),
     PlayGameSpec(
       id: 'badminton',
