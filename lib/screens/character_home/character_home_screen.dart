@@ -30,7 +30,7 @@ class CharacterHomeScreen extends StatefulWidget {
 class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     with WidgetsBindingObserver {
   static const _baoAwakeVideoAsset =
-      'assets/videos/bao_character_screen_bg_video.mp4';
+      'assets/videos/bao_character_screen_bg_video_list/bao_character_screen_bg_video.mp4';
   static const _baoSleepingVideoAsset =
       'assets/videos/wake/bao_sleeping_video.mp4';
 
