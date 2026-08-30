@@ -9,6 +9,7 @@ import '../../models/activity_schedule.dart';
 import '../../models/character.dart';
 import '../../services/schedule_store.dart';
 import '../../services/sleep_store.dart';
+import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -49,7 +50,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
 
   VideoPlayerController? _video;
   bool _videoReady = false;
-  bool _isSleeping = true;
+  bool _isSleeping = false;
   bool _sleepLoaded = false;
   Timer? _sleepCheckTimer;
   Map<String, ActivityTimerStatus> _timerByRoute = {};
@@ -69,12 +70,10 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     );
     character = characterById(id);
 
-    // Start with the sleeping bedroom clip so home never flashes the old bg.
-    if (_isBao) {
-      unawaited(_initVideo(sleeping: true));
-    }
+    // Resolve real sleep state first (do not force-sleep outside windows).
     unawaited(_refreshSleepState(initVideo: true));
     unawaited(_refreshTimers());
+    unawaited(_loadStars());
     _sleepCheckTimer = Timer.periodic(
       const Duration(minutes: 1),
       (_) {
@@ -90,6 +89,12 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       unawaited(_refreshSleepState());
       unawaited(_refreshTimers());
     }
+  }
+
+  Future<void> _loadStars() async {
+    final total = await StarsStore.total();
+    if (!mounted) return;
+    setState(() => stars = total);
   }
 
   Future<void> _refreshTimers() async {
@@ -108,7 +113,6 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     final sleeping = await SleepStore.isSleeping();
     if (!mounted) return;
 
-    final changed = sleeping != _isSleeping || !_sleepLoaded;
     setState(() {
       _isSleeping = sleeping;
       _sleepLoaded = true;
@@ -120,7 +124,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       }
     });
 
-    if (_isBao && (initVideo || (changed && sleeping != _videoShowsSleeping))) {
+    if (_isBao && (initVideo || sleeping != _videoShowsSleeping)) {
       await _initVideo(sleeping: sleeping);
     }
   }
@@ -222,6 +226,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     await context.push('${item.route}?character=${character.id.name}');
     if (!mounted) return;
     await _refreshTimers();
+    await _loadStars();
     // Restore sleep-based selection when returning home.
     setState(() {
       _selectedRoute = _isSleeping ? '/wake-up' : null;
@@ -449,9 +454,10 @@ class _SheetNavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelColor = selected ? _selectedLabel : _inactive;
     final due = timer?.isDue ?? false;
     final progress = timer?.progress ?? 1.0;
+    final emphasize = selected || due;
+    final labelColor = emphasize ? _selectedLabel : _inactive;
 
     return Opacity(
       opacity: dimmed ? 0.4 : 1,
@@ -468,12 +474,13 @@ class _SheetNavButton extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: selected ? Colors.white : Colors.transparent,
-                boxShadow: selected
+                color: emphasize ? Colors.white : Colors.transparent,
+                boxShadow: emphasize
                     ? [
                         BoxShadow(
-                          color: TTColors.darkBrown.withValues(alpha: 0.10),
-                          blurRadius: 6,
+                          color: (due ? accent : TTColors.darkBrown)
+                              .withValues(alpha: due ? 0.35 : 0.10),
+                          blurRadius: due ? 10 : 6,
                           offset: const Offset(0, 2),
                         ),
                       ]
@@ -495,8 +502,7 @@ class _SheetNavButton extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TTTypography.caption(color: labelColor).copyWith(
                 fontSize: 11,
-                fontWeight:
-                    selected || due ? FontWeight.w800 : FontWeight.w600,
+                fontWeight: emphasize ? FontWeight.w800 : FontWeight.w600,
               ),
             ),
           ],

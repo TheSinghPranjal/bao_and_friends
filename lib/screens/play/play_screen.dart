@@ -4,19 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
-import '../../models/activity_schedule.dart';
 import '../../models/play_games.dart';
-import '../../models/rewards.dart';
-import '../../services/schedule_store.dart';
+import '../../services/play_due_store.dart';
+import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
 import '../../widgets/item_tray_bar.dart';
 import '../../widgets/status_bar.dart';
-import '../drink/drink_water_screen.dart' show RewardPopup;
 
-/// Play Activity — pick games from a bottom tray (5 per page).
-/// Idle Bao video behind. Each game opens its own sub-activity.
+/// Play Activity — pick games from a bottom tray.
+/// Due games glow + show a badge of missed slots for today.
 class PlayScreen extends StatefulWidget {
   const PlayScreen({super.key});
 
@@ -25,19 +23,36 @@ class PlayScreen extends StatefulWidget {
 }
 
 class _PlayScreenState extends State<PlayScreen> {
-  static const _idleVideoAsset =
-      'assets/videos/play/play_screen_video.mp4';
-
-  final Set<int> _played = {};
-  bool _celebrating = false;
+  static const _idleVideoAsset = 'assets/videos/play/play_screen_video.mp4';
 
   VideoPlayerController? _idleVideo;
   bool _idleReady = false;
+  int _stars = 12;
+  Map<String, int> _dueByGame = {};
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     unawaited(_initVideo());
+    unawaited(_refresh());
+    _refreshTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => unawaited(_refresh()),
+    );
+  }
+
+  Future<void> _refresh() async {
+    final stars = await StarsStore.total();
+    final dues = <String, int>{};
+    for (final game in PlayGames.all) {
+      dues[game.id] = await PlayDueStore.dueCount(game.id);
+    }
+    if (!mounted) return;
+    setState(() {
+      _stars = stars;
+      _dueByGame = dues;
+    });
   }
 
   Future<void> _initVideo() async {
@@ -66,6 +81,7 @@ class _PlayScreenState extends State<PlayScreen> {
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     final video = _idleVideo;
     _idleVideo = null;
     _idleReady = false;
@@ -75,55 +91,15 @@ class _PlayScreenState extends State<PlayScreen> {
   }
 
   Future<void> _tapGame(int index) async {
-    if (_celebrating || _played.contains(index)) return;
-
     final game = PlayGames.all[index];
-    final completed = await context.push<bool>('/play-game/${game.id}');
-    if (!mounted || completed != true) return;
-    setState(() => _played.add(index));
-    await ScheduleStore.markCompleted(ActivityId.play);
-
-    if (_played.length >= PlayRules.gamesForFullReward) {
-      setState(() => _celebrating = true);
-      final reward = PlayRules.rewardForGames(_played.length);
-      await Future<void>.delayed(const Duration(milliseconds: 600));
-      if (!mounted) return;
-      await _showReward(reward);
-      if (!mounted) return;
-      context.pop();
-    }
-  }
-
-  Future<void> _showReward(RewardResult reward) {
-    return showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierLabel: 'Reward',
-      barrierColor: TTColors.darkBrown.withValues(alpha: 0.4),
-      transitionDuration: const Duration(milliseconds: 320),
-      pageBuilder: (context, anim, _) {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: RewardPopup(
-              reward: reward,
-              onContinue: () => Navigator.of(context).pop(),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (context, anim, _, child) {
-        return ScaleTransition(
-          scale: CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
-          child: FadeTransition(opacity: anim, child: child),
-        );
-      },
-    );
+    await context.push<bool>('/play-game/${game.id}');
+    if (!mounted) return;
+    await _refresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    final remaining = PlayRules.maxGames - _played.length;
+    final anyDue = _dueByGame.values.any((c) => c > 0);
 
     return Scaffold(
       backgroundColor: TTColors.goldenGlow,
@@ -166,7 +142,7 @@ class _PlayScreenState extends State<PlayScreen> {
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: 12 + (_played.isEmpty ? 0 : 1),
+                stars: _stars,
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop()),
               ),
@@ -176,22 +152,25 @@ class _PlayScreenState extends State<PlayScreen> {
                 style: TTTypography.headline(color: TTColors.darkBrown),
               ),
               Text(
-                remaining == 0
-                    ? 'All done — so much fun!'
-                    : 'Pick a game ($remaining left)',
+                anyDue
+                    ? 'Something is due — tap a glowing game!'
+                    : 'Pick a game anytime for bonus stars',
                 style: TTTypography.subtitle(),
               ),
               const Spacer(),
               ItemTrayBar(
-                enabled: !_celebrating,
                 items: [
-                  for (var i = 0; i < PlayGames.all.length; i++)
+                  for (final game in PlayGames.all)
                     TrayItem(
-                      label: PlayGames.all[i].label,
-                      icon: PlayGames.all[i].icon,
-                      accent: PlayGames.all[i].accent,
-                      done: _played.contains(i),
-                      onTap: () => _tapGame(i),
+                      label: game.label,
+                      icon: game.icon,
+                      accent: game.accent,
+                      done: false,
+                      badgeCount: _dueByGame[game.id] ?? 0,
+                      highlighted: (_dueByGame[game.id] ?? 0) > 0,
+                      onTap: () => unawaited(
+                        _tapGame(PlayGames.all.indexOf(game)),
+                      ),
                     ),
                 ],
               ),

@@ -13,6 +13,8 @@ class TrayItem {
     required this.done,
     this.onTap,
     this.imageAsset,
+    this.badgeCount = 0,
+    this.highlighted = false,
   });
 
   final String label;
@@ -23,6 +25,12 @@ class TrayItem {
 
   /// Optional 3D illustration; falls back to [icon] when null.
   final String? imageAsset;
+
+  /// Due / missed count badge (e.g. Play football).
+  final int badgeCount;
+
+  /// Glow / emphasize when an activity slot is due.
+  final bool highlighted;
 }
 
 /// Compact bottom tray: 5 icons + labels per page, golden chevrons.
@@ -127,7 +135,9 @@ class _ItemTrayBarState extends State<ItemTrayBar> {
                           child: Center(
                             child: _TrayIcon(
                               item: item,
-                              enabled: widget.enabled && !item.done,
+                              // Keep due/highlighted games tappable even if marked done.
+                              enabled: widget.enabled &&
+                                  (!item.done || item.highlighted || item.badgeCount > 0),
                             ),
                           ),
                         ),
@@ -242,12 +252,19 @@ class _TrayIcon extends StatelessWidget {
                     height: _bubble,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.95),
-                      border: Border.all(color: Colors.white, width: 2.5),
+                      color: item.highlighted
+                          ? item.accent.withValues(alpha: 0.35)
+                          : Colors.white.withValues(alpha: 0.95),
+                      border: Border.all(
+                        color: item.highlighted ? item.accent : Colors.white,
+                        width: item.highlighted ? 3 : 2.5,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: TTColors.darkBrown.withValues(alpha: 0.10),
-                          blurRadius: 6,
+                          color: item.highlighted
+                              ? item.accent.withValues(alpha: 0.45)
+                              : TTColors.darkBrown.withValues(alpha: 0.10),
+                          blurRadius: item.highlighted ? 10 : 6,
                           offset: const Offset(0, 2),
                         ),
                       ],
@@ -264,13 +281,38 @@ class _TrayIcon extends StatelessWidget {
                           : Icon(
                               item.icon,
                               size: 24,
-                              color: item.done
+                              color: item.done && !item.highlighted
                                   ? TTColors.bambooDeep
                                   : TTColors.darkBrown.withValues(alpha: 0.88),
                             ),
                     ),
                   ),
-                  if (item.done)
+                  if (item.badgeCount > 0)
+                    Positioned(
+                      right: -4,
+                      top: -4,
+                      child: Container(
+                        constraints: const BoxConstraints(minWidth: 18),
+                        height: 18,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: TTColors.ribbonOrange,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: Text(
+                          item.badgeCount > 9 ? '9+' : '${item.badgeCount}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            height: 1,
+                          ),
+                        ),
+                      ),
+                    )
+                  else if (item.done)
                     Positioned(
                       right: -2,
                       bottom: -2,
