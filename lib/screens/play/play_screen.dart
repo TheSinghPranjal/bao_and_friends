@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/activity_schedule.dart';
 import '../../models/play_games.dart';
 import '../../models/rewards.dart';
+import '../../services/schedule_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -79,6 +81,7 @@ class _PlayScreenState extends State<PlayScreen> {
     final completed = await context.push<bool>('/play-game/${game.id}');
     if (!mounted || completed != true) return;
     setState(() => _played.add(index));
+    await ScheduleStore.markCompleted(ActivityId.play);
 
     if (_played.length >= PlayRules.gamesForFullReward) {
       setState(() => _celebrating = true);

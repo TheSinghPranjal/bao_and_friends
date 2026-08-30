@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/activity_schedule.dart';
 import '../../models/rewards.dart';
+import '../../services/schedule_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -163,6 +165,8 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
       await Future<void>.delayed(const Duration(milliseconds: 900));
       if (!mounted) return;
       await _showReward(reward);
+      if (!mounted) return;
+      await ScheduleStore.markCompleted(ActivityId.drink);
       if (!mounted) return;
       context.pop();
     }

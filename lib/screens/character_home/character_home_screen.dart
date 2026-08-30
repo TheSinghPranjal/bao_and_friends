@@ -5,13 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/activity_schedule.dart';
 import '../../models/character.dart';
+import '../../services/schedule_store.dart';
 import '../../services/sleep_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
 import '../../widgets/bao_face.dart';
 import '../../widgets/bounce_button.dart';
+import '../../widgets/circular_timer_ring.dart';
 import '../../widgets/status_bar.dart';
 
 /// Character Home — looping bedroom video (Bao) + frosted bottom activity sheet.
@@ -51,6 +54,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
   bool _isSleeping = true;
   bool _sleepLoaded = false;
   Timer? _sleepCheckTimer;
+  Map<String, ActivityTimerStatus> _timerByRoute = {};
 
   /// Visual selection in the bottom sheet (matches mock white-circle + orange).
   String? _selectedRoute;
@@ -72,9 +76,13 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       unawaited(_initVideo(sleeping: true));
     }
     unawaited(_refreshSleepState(initVideo: true));
+    unawaited(_refreshTimers());
     _sleepCheckTimer = Timer.periodic(
       const Duration(minutes: 1),
-      (_) => unawaited(_refreshSleepState()),
+      (_) {
+        unawaited(_refreshSleepState());
+        unawaited(_refreshTimers());
+      },
     );
   }
 
@@ -82,7 +90,20 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_refreshSleepState());
+      unawaited(_refreshTimers());
     }
+  }
+
+  Future<void> _refreshTimers() async {
+    final map = await ScheduleStore.homeStatuses();
+    final wake = await SleepStore.wakeTimerStatus();
+    if (!mounted) return;
+    setState(() {
+      _timerByRoute = {
+        ...map,
+        '/wake-up': wake,
+      };
+    });
   }
 
   Future<void> _refreshSleepState({bool initVideo = false}) async {
@@ -167,6 +188,15 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     if (item.route == '/wake-up') {
       if (!_isSleeping) {
         if (!mounted) return;
+        final canRest = await SleepStore.canReturnToSleep();
+        if (!mounted) return;
+        if (canRest) {
+          await SleepStore.goBackToSleep();
+          if (!mounted) return;
+          await _refreshSleepState();
+          await _refreshTimers();
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -186,12 +216,14 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       if (!mounted) return;
       if (woke == true) {
         await _refreshSleepState();
+        await _refreshTimers();
       }
       return;
     }
 
     await context.push('${item.route}?character=${character.id.name}');
     if (!mounted) return;
+    await _refreshTimers();
     // Restore sleep-based selection when returning home.
     setState(() {
       _selectedRoute = _isSleeping ? '/wake-up' : null;
@@ -294,6 +326,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
                     items: _navItems,
                     selectedRoute: _selectedRoute,
                     wakeUpDimmed: !_isSleeping,
+                    timers: _timerByRoute,
                     onTap: (item) => unawaited(_openNav(item)),
                   ),
                 ),
@@ -318,15 +351,27 @@ class _ActivityBottomSheet extends StatelessWidget {
     required this.items,
     required this.selectedRoute,
     required this.wakeUpDimmed,
+    required this.timers,
     required this.onTap,
   });
 
   final List<_NavItem> items;
   final String? selectedRoute;
   final bool wakeUpDimmed;
+  final Map<String, ActivityTimerStatus> timers;
   final ValueChanged<_NavItem> onTap;
 
   static const _handle = Color(0xFFB0B0B0);
+
+  Color _accentFor(String route) => switch (route) {
+        '/learn' => TTColors.skyBlue,
+        '/play' => TTColors.golden,
+        '/feed' => TTColors.momoCoral,
+        '/chores' => TTColors.bamboo,
+        '/drink' => TTColors.waterDrop,
+        '/wake-up' => TTColors.bedWarm,
+        _ => TTColors.softBrown,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -354,7 +399,6 @@ class _ActivityBottomSheet extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Drag handle
               Container(
                 width: 36,
                 height: 4,
@@ -372,6 +416,8 @@ class _ActivityBottomSheet extends StatelessWidget {
                         item: item,
                         selected: selectedRoute == item.route,
                         dimmed: item.route == '/wake-up' && wakeUpDimmed,
+                        timer: timers[item.route],
+                        accent: _accentFor(item.route),
                         onTap: () => onTap(item),
                       ),
                     ),
@@ -390,12 +436,16 @@ class _SheetNavButton extends StatelessWidget {
     required this.item,
     required this.selected,
     required this.dimmed,
+    required this.timer,
+    required this.accent,
     required this.onTap,
   });
 
   final _NavItem item;
   final bool selected;
   final bool dimmed;
+  final ActivityTimerStatus? timer;
+  final Color accent;
   final VoidCallback onTap;
 
   static const _selectedLabel = Color(0xFFC4783A);
@@ -403,8 +453,9 @@ class _SheetNavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = selected ? _inactive : _inactive;
     final labelColor = selected ? _selectedLabel : _inactive;
+    final due = timer?.isDue ?? false;
+    final progress = timer?.progress ?? 1.0;
 
     return Opacity(
       opacity: dimmed ? 0.4 : 1,
@@ -417,8 +468,8 @@ class _SheetNavButton extends StatelessWidget {
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOut,
-              width: 44,
-              height: 44,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: selected ? Colors.white : Colors.transparent,
@@ -432,7 +483,13 @@ class _SheetNavButton extends StatelessWidget {
                       ]
                     : null,
               ),
-              child: Icon(item.icon, color: iconColor, size: 24),
+              child: CircularTimerRing(
+                progress: progress,
+                isDue: due && item.route != '/learn',
+                color: accent,
+                size: 46,
+                child: Icon(item.icon, color: _inactive, size: 22),
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -442,7 +499,8 @@ class _SheetNavButton extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TTTypography.caption(color: labelColor).copyWith(
                 fontSize: 11,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                fontWeight:
+                    selected || due ? FontWeight.w800 : FontWeight.w600,
               ),
             ),
           ],

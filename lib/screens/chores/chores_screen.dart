@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/activity_schedule.dart';
 import '../../models/rewards.dart';
+import '../../services/schedule_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -91,14 +93,17 @@ class _ChoresScreenState extends State<ChoresScreen> {
       final completed = await context.push<bool>('/make-bed');
       if (!mounted || completed != true) return;
       setState(() => _done.add(index));
+      await ScheduleStore.markCompleted(ActivityId.makeBed);
     } else if (index == 1) {
       final completed = await context.push<bool>('/brush-teeth');
       if (!mounted || completed != true) return;
       setState(() => _done.add(index));
+      await ScheduleStore.markCompleted(ActivityId.brushTeeth);
     } else if (index == 2) {
       final completed = await context.push<bool>('/wash-face');
       if (!mounted || completed != true) return;
       setState(() => _done.add(index));
+      await ScheduleStore.markCompleted(ActivityId.washFace);
     } else if (index == 3) {
       final completed = await context.push<bool>('/comb-hair');
       if (!mounted || completed != true) return;

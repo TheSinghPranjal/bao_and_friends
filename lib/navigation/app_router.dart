@@ -20,6 +20,7 @@ import '../screens/play/play_game_screen.dart';
 import '../screens/play/play_screen.dart';
 import '../screens/shared/module_hub_screen.dart';
 import '../screens/splash/splash_screen.dart';
+import '../screens/system/activity_timers_settings_screen.dart';
 import '../screens/system/parent_gate_screen.dart';
 import '../screens/system/utility_screens.dart';
 
@@ -125,6 +126,10 @@ GoRouter createAppRouter({bool skipSplash = false}) {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/activity-timers',
+        builder: (context, state) => const ActivityTimersSettingsScreen(),
       ),
       GoRoute(
         path: '/profile',

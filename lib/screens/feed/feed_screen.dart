@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/activity_schedule.dart';
 import '../../models/rewards.dart';
+import '../../services/schedule_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -118,6 +120,8 @@ class _FeedScreenState extends State<FeedScreen> {
     } else {
       setState(() => _eaten.add(index));
     }
+
+    await ScheduleStore.markCompleted(ActivityId.feed);
 
     if (_eaten.length >= FeedRules.foodsForFullReward) {
       setState(() => _celebrating = true);

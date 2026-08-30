@@ -143,6 +143,7 @@ class SettingsScreen extends StatelessWidget {
       title: 'Settings',
       items: [
         ('Sound & Music', Icons.volume_up_rounded, '/sound'),
+        ('Activity Timers', Icons.timer_rounded, '/activity-timers'),
         ('Profile', Icons.person_rounded, '/profile'),
         ('Calendar / Streak', Icons.calendar_today_rounded, '/calendar'),
         ('Parent Dashboard', Icons.dashboard_rounded, '/parent-dashboard'),
