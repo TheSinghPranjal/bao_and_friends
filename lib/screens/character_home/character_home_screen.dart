@@ -46,8 +46,6 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
 
   late FamilyCharacter character;
   int stars = 12;
-  int beans = 3;
-  int level = 2;
 
   VideoPlayerController? _video;
   bool _videoReady = false;
@@ -253,8 +251,6 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
             children: [
               TinyStatusBar(
                 stars: stars,
-                beans: beans,
-                level: level,
                 onSettings: () => context.push('/parent-gate'),
                 onProfile: () => context.push('/profile'),
                 leading: TtBackButton(

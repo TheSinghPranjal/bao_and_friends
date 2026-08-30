@@ -24,7 +24,6 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
 
   // Demo values — wire these to your real player-progress provider.
   final int stars = 125;
-  final int beans = 35;
 
   @override
   void initState() {
@@ -135,7 +134,6 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
                 const SizedBox(height: 8),
                 _TopBar(
                   stars: stars,
-                  beans: beans,
                   onBack: () => context.pop(),
                   onSettings: _openParentGateSettings,
                 ),
@@ -210,18 +208,16 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
 }
 
 // =====================================================================
-// TOP BAR — gold back button (left) + star & bean pills (right)
+// TOP BAR — gold back button (left) + star pill (right)
 // =====================================================================
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.stars,
-    required this.beans,
     required this.onBack,
     required this.onSettings,
   });
 
   final int stars;
-  final int beans;
   final VoidCallback onBack;
   final VoidCallback onSettings;
 
@@ -233,20 +229,10 @@ class _TopBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           TtBackButton(onPressed: onBack),
-          Row(
-            children: [
-              _CounterPill(
-                icon: Icons.star_rounded,
-                iconColor: const Color(0xFFFFC93C),
-                value: stars,
-              ),
-              const SizedBox(width: 10),
-              _CounterPill(
-                icon: Icons.eco_rounded,
-                iconColor: const Color(0xFF4CAF50),
-                value: beans,
-              ),
-            ],
+          _CounterPill(
+            icon: Icons.star_rounded,
+            iconColor: const Color(0xFFFFC93C),
+            value: stars,
           ),
         ],
       ),

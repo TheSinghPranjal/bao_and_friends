@@ -196,8 +196,6 @@ class _ChoresScreenState extends State<ChoresScreen> {
               TinyStatusBar(
                 showCounters: true,
                 stars: 12 + (_done.isEmpty ? 0 : 1),
-                beans: 3,
-                level: 2,
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop()),
               ),
