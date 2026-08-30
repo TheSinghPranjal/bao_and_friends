@@ -25,7 +25,8 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
 
   void _submit(int value) {
     if (value == _answer) {
-      context.go(widget.nextRoute);
+      // Replace the gate so Settings can pop back to the prior screen.
+      context.pushReplacement(widget.nextRoute);
       return;
     }
     setState(() {

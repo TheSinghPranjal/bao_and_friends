@@ -174,7 +174,15 @@ class _SimpleListScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  TtBackButton(onPressed: () => context.pop()),
+                  TtBackButton(
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/select');
+                      }
+                    },
+                  ),
                   const SizedBox(width: 12),
                   Text(title, style: TTTypography.headline()),
                 ],
