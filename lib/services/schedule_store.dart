@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/activity_schedule.dart';
+import 'play_due_store.dart';
 
 /// Persists custom schedule times + last completion per [ActivityId].
 class ScheduleStore {
@@ -197,9 +198,18 @@ class ScheduleStore {
   }) async {
     final t = now ?? DateTime.now();
     final drink = await statusFor(ActivityId.drink, now: t);
-    final play = await statusFor(ActivityId.play, now: t);
     final feed = await statusFor(ActivityId.feed, now: t);
     final chores = await choresHubStatus(now: t);
+
+    final playDue = await PlayDueStore.anyPlayDue(t);
+    final play = ActivityTimerStatus(
+      id: ActivityId.play,
+      progress: playDue ? 0 : 1,
+      isDue: playDue,
+      nextAt: null,
+      windowStart: t,
+    );
+
     return {
       '/drink': drink,
       '/play': play,

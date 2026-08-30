@@ -57,34 +57,27 @@ class SleepStore {
 
   /// During night window (10pm–6am), Bao may voluntarily sleep again after wake.
   static Future<bool> canReturnToSleep({DateTime? now}) async {
-    final t = now ?? DateTime.now();
-    final minutes = t.hour * 60 + t.minute;
-    final (nightStart, nightEnd, _) = await sleepSlots();
-    if (nightStart > nightEnd) {
-      return minutes >= nightStart || minutes < nightEnd;
-    }
-    return minutes >= nightStart && minutes < nightEnd;
+    return inScheduledSleepWindow(now: now);
   }
 
-  /// Sleeping if never woken, or awake period expired, or in schedule and not
-  /// currently inside a fresh wake window.
+  /// Sleep only inside scheduled windows.
+  /// - Outside 10pm–6am and noon nap → always awake (even on first launch).
+  /// - Inside a window → sleeping unless woken within the last hour.
   static Future<bool> isSleeping({DateTime? now}) async {
     final t = now ?? DateTime.now();
+    final inWindow = await inScheduledSleepWindow(now: t);
+    if (!inWindow) return false;
+
     final woke = await lastWokeAt();
     if (woke == null) return true;
 
-    final awakeFor = Duration(minutes: DefaultSchedules.awakeAfterWakeMinutes);
-    // Prefer WakeUpRules if it matches; schedule is source of truth for length.
-    final limit = WakeUpRules.sleepInterval > awakeFor
+    final limit = Duration(minutes: DefaultSchedules.awakeAfterWakeMinutes);
+    // Keep WakeUpRules in sync when both are 1h.
+    final awakeLimit = WakeUpRules.sleepInterval > limit
         ? WakeUpRules.sleepInterval
-        : awakeFor;
-
-    final stillAwakeFromWake = t.difference(woke) < limit;
-    if (stillAwakeFromWake) return false;
-
-    // After 1h awake: sleep again whenever inside a sleep window; stay awake
-    // outside windows (daytime free play).
-    return inScheduledSleepWindow(now: t);
+        : limit;
+    if (t.difference(woke) < awakeLimit) return false;
+    return true;
   }
 
   static Future<Duration> timeUntilSleep({DateTime? now}) async {
@@ -97,7 +90,7 @@ class SleepStore {
     return limit - elapsed;
   }
 
-  /// During night window, parent/kid can put Bao back to sleep after a wake.
+  /// During a sleep window, put Bao back to sleep after a wake.
   static Future<void> goBackToSleep() async {
     final prefs = await SharedPreferences.getInstance();
     final past = DateTime.now().subtract(
@@ -106,7 +99,7 @@ class SleepStore {
     await prefs.setInt(_lastWokeKey, past.millisecondsSinceEpoch);
   }
 
-  /// Progress for wake ring: 1 while sleeping (needs wake), depletes while awake.
+  /// Progress for wake ring: empty/due while sleeping; depletes while awake.
   static Future<ActivityTimerStatus> wakeTimerStatus({DateTime? now}) async {
     final t = now ?? DateTime.now();
     final sleeping = await isSleeping(now: t);
@@ -117,6 +110,16 @@ class SleepStore {
         isDue: true,
         nextAt: null,
         windowStart: t,
+      );
+    }
+    final inWindow = await inScheduledSleepWindow(now: t);
+    if (!inWindow) {
+      return ActivityTimerStatus(
+        id: ActivityId.wake,
+        progress: 1,
+        isDue: false,
+        nextAt: null,
+        windowStart: await lastWokeAt(),
       );
     }
     final remaining = await timeUntilSleep(now: t);
