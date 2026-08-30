@@ -79,8 +79,8 @@ flutter:
   assets:
     - assets/videos/splash_screen_bg_video.mp4
     - assets/videos/bao_character_screen_bg_video.mp4
-    - assets/videos/bao_sleeping.mp4
-    - assets/videos/bao_waking_up.mp4
+    - assets/videos/wake/bao_sleeping_video.mp4
+    - assets/videos/wake/bao_waking_up_video.mp4
     - assets/videos/feed/water/bao_not_drinking_water.mp4
     - assets/videos/feed/water/bao_drinking_water.mp4
     - assets/videos/feed/milk/bao_not_drinking_milk_video.mp4
@@ -106,6 +106,12 @@ flutter:
     - assets/videos/play/football/bao_playing_football_video.mp4
     - assets/videos/play/cricket/bao_not_playing_cricket_video.mp4
     - assets/videos/play/cricket/bao_playing_cricket_video.mp4
+    - assets/videos/play/yoga/bao_not_doing_yoga_video.mp4
+    - assets/videos/play/yoga/bao_doing_yoga_video.mp4
+    - assets/videos/play/dance/bao_not_doing_dance_video.mp4
+    - assets/videos/play/dance/bao_doing_dance_video.mp4
+    - assets/videos/play/skipping/bao_not_doing_skipping_video.mp4
+    - assets/videos/play/skipping/bao_doing_skipping_video.mp4
     - assets/videos/bao_not_feeding.mp4
     - assets/images/logo_splash_screen.png
     - assets/images/character_select_bg.png

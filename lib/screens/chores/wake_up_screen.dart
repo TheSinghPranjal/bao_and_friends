@@ -25,9 +25,10 @@ class WakeUpScreen extends StatefulWidget {
 
 class _WakeUpScreenState extends State<WakeUpScreen>
     with TickerProviderStateMixin {
-  static const _sleepingVideoAsset = 'assets/videos/bao_sleeping.mp4';
-  // Placeholder until a dedicated waking clip is added (same source for now).
-  static const _wakingVideoAsset = 'assets/videos/bao_waking_up.mp4';
+  static const _sleepingVideoAsset =
+      'assets/videos/wake/bao_sleeping_video.mp4';
+  static const _wakingVideoAsset =
+      'assets/videos/wake/bao_waking_up_video.mp4';
   static const _crossfadeDuration = Duration(milliseconds: 550);
 
   late final AnimationController _float;

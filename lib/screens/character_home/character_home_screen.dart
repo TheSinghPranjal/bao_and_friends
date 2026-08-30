@@ -28,7 +28,8 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   static const _baoAwakeVideoAsset =
       'assets/videos/bao_character_screen_bg_video.mp4';
-  static const _baoSleepingVideoAsset = 'assets/videos/bao_sleeping.mp4';
+  static const _baoSleepingVideoAsset =
+      'assets/videos/wake/bao_sleeping_video.mp4';
 
   late final AnimationController _float;
   late FamilyCharacter character;

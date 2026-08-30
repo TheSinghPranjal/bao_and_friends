@@ -72,18 +72,30 @@ abstract final class PlayGames {
       label: 'Skipping',
       icon: Icons.directions_run_rounded,
       accent: Color(0xFFCE93D8),
+      idleVideoAsset:
+          'assets/videos/play/skipping/bao_not_doing_skipping_video.mp4',
+      actionVideoAsset:
+          'assets/videos/play/skipping/bao_doing_skipping_video.mp4',
     ),
     PlayGameSpec(
       id: 'dance',
       label: 'Dance',
       icon: Icons.nightlife_rounded,
       accent: Color(0xFFF48FB1),
+      idleVideoAsset:
+          'assets/videos/play/dance/bao_not_doing_dance_video.mp4',
+      actionVideoAsset:
+          'assets/videos/play/dance/bao_doing_dance_video.mp4',
     ),
     PlayGameSpec(
       id: 'yoga',
       label: 'Yoga',
       icon: Icons.self_improvement_rounded,
       accent: Color(0xFFA5D6A7),
+      idleVideoAsset:
+          'assets/videos/play/yoga/bao_not_doing_yoga_video.mp4',
+      actionVideoAsset:
+          'assets/videos/play/yoga/bao_doing_yoga_video.mp4',
     ),
     PlayGameSpec(
       id: 'coloring',
