@@ -79,6 +79,10 @@ flutter:
   assets:
     - assets/videos/splash_screen_bg_video.mp4
     - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_bg_video.mp4
+    - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_night_bg_video.mp4
+    - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_morning_bg_video.mp4
+    - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_noon_bg_video.mp4
+    - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_evening_bg_video.mp4
     - assets/videos/wake/bao_sleeping_video.mp4
     - assets/videos/wake/bao_waking_up_video.mp4
     - assets/videos/feed/water/bao_not_drinking_water.mp4

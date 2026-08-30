@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../models/activity_schedule.dart';
 import '../../models/character.dart';
+import '../../models/character_bg_videos.dart';
 import '../../services/schedule_store.dart';
 import '../../services/sleep_store.dart';
 import '../../services/stars_store.dart';
@@ -29,8 +30,6 @@ class CharacterHomeScreen extends StatefulWidget {
 
 class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     with WidgetsBindingObserver {
-  static const _baoAwakeVideoAsset =
-      'assets/videos/bao_character_screen_bg_video_list/bao_character_screen_bg_video.mp4';
   static const _baoSleepingVideoAsset =
       'assets/videos/wake/bao_sleeping_video.mp4';
 
@@ -53,6 +52,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
   bool _sleepLoaded = false;
   Timer? _sleepCheckTimer;
   Map<String, ActivityTimerStatus> _timerByRoute = {};
+  CharacterBgPeriod? _awakePeriod;
 
   /// Visual selection in the bottom sheet (matches mock white-circle + orange).
   String? _selectedRoute;
@@ -112,9 +112,13 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     final sleeping = await SleepStore.isSleeping();
     if (!mounted) return;
 
+    final period = CharacterBgVideos.periodFor();
+    final periodChanged = !sleeping && period != _awakePeriod;
+
     setState(() {
       _isSleeping = sleeping;
       _sleepLoaded = true;
+      if (!sleeping) _awakePeriod = period;
       // Emphasize Wake Up when Bao is asleep (same selected treatment as mock).
       if (sleeping) {
         _selectedRoute = '/wake-up';
@@ -123,7 +127,10 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       }
     });
 
-    if (_isBao && (initVideo || sleeping != _videoShowsSleeping)) {
+    if (_isBao &&
+        (initVideo ||
+            sleeping != _videoShowsSleeping ||
+            periodChanged)) {
       await _initVideo(sleeping: sleeping);
     }
   }
@@ -133,41 +140,74 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     return src.contains('bao_sleeping_video');
   }
 
+  String get _currentAwakeAsset {
+    final src = _video?.dataSource ?? '';
+    for (final asset in CharacterBgVideos.allPeriodAssets) {
+      if (src.contains(asset.split('/').last)) return asset;
+    }
+    if (src.contains('bao_character_screen_bg_video.mp4')) {
+      return CharacterBgVideos.fallback;
+    }
+    return '';
+  }
+
   Future<void> _initVideo({required bool sleeping}) async {
-    final asset = sleeping ? _baoSleepingVideoAsset : _baoAwakeVideoAsset;
+    final preferred =
+        sleeping ? _baoSleepingVideoAsset : CharacterBgVideos.assetForNow();
     final previous = _video;
 
+    if (!sleeping) {
+      _awakePeriod = CharacterBgVideos.periodFor();
+    }
+
+    // Already showing the correct clip.
     if (previous != null &&
         previous.value.isInitialized &&
-        _videoShowsSleeping == sleeping) {
+        sleeping == _videoShowsSleeping &&
+        (sleeping || _currentAwakeAsset == preferred)) {
       return;
     }
 
     previous?.pause();
 
+    final loaded = await _tryLoadAsset(preferred) ??
+        (!sleeping ? await _tryLoadAsset(CharacterBgVideos.fallback) : null);
+
+    if (loaded == null) return;
+
+    if (!mounted) {
+      await loaded.dispose();
+      return;
+    }
+
+    setState(() {
+      _video = loaded;
+      _videoReady = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      previous?.dispose();
+    });
+  }
+
+  Future<VideoPlayerController?> _tryLoadAsset(String asset) async {
     final controller = VideoPlayerController.asset(asset);
     try {
       await controller.initialize();
       if (!mounted) {
         await controller.dispose();
-        return;
+        return null;
       }
       await controller.setLooping(true);
       await controller.setVolume(0);
       await controller.play();
       if (!mounted) {
         await controller.dispose();
-        return;
+        return null;
       }
-      setState(() {
-        _video = controller;
-        _videoReady = true;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        previous?.dispose();
-      });
+      return controller;
     } catch (_) {
       await controller.dispose();
+      return null;
     }
   }
 

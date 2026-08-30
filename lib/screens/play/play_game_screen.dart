@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/character_bg_videos.dart';
 import '../../models/play_games.dart';
 import '../../models/rewards.dart';
 import '../../services/play_due_store.dart';
@@ -29,8 +30,7 @@ class PlayGameScreen extends StatefulWidget {
 
 class _PlayGameScreenState extends State<PlayGameScreen>
     with TickerProviderStateMixin {
-  static const _fallbackIdleVideoAsset =
-      'assets/videos/bao_character_screen_bg_video_list/bao_character_screen_bg_video.mp4';
+  static const _fallbackIdleVideoAsset = CharacterBgVideos.fallback;
   static const _crossfadeDuration = Duration(milliseconds: 550);
 
   late final PlayGameSpec _game;

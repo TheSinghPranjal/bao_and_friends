@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/activity_schedule.dart';
+import '../../models/character_bg_videos.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
 import '../../theme/tt_colors.dart';
@@ -33,8 +34,7 @@ class _ChoreItem {
 
 class _ChoresScreenState extends State<ChoresScreen> {
   // Temporary idle clip until a dedicated chores bedroom video is added.
-  static const _idleVideoAsset =
-      'assets/videos/bao_character_screen_bg_video_list/bao_character_screen_bg_video.mp4';
+  static const _idleVideoAsset = CharacterBgVideos.fallback;
 
   static const _chores = <_ChoreItem>[
     _ChoreItem('Make Bed', Icons.bed_rounded, Color(0xFFB39DDB)),
