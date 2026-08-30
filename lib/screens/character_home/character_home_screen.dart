@@ -39,7 +39,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
 
   VideoPlayerController? _video;
   bool _videoReady = false;
-  bool _isSleeping = false;
+  bool _isSleeping = true;
   bool _sleepLoaded = false;
   Timer? _sleepCheckTimer;
 
@@ -87,6 +87,10 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       duration: const Duration(seconds: 4),
     )..repeat(reverse: true);
 
+    // Start with the sleeping bedroom clip so home never flashes the old bg.
+    if (_isBao) {
+      unawaited(_initVideo(sleeping: true));
+    }
     unawaited(_refreshSleepState(initVideo: true));
     _sleepCheckTimer = Timer.periodic(
       const Duration(minutes: 1),
@@ -118,7 +122,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
 
   bool get _videoShowsSleeping {
     final src = _video?.dataSource ?? '';
-    return src.contains('bao_sleeping');
+    return src.contains('bao_sleeping_video');
   }
 
   Future<void> _initVideo({required bool sleeping}) async {
@@ -264,7 +268,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    'Bao is sleeping — tap Wake Up!',
+                    'Bao is sleeping — tap to wake up!',
                     style: TTTypography.subtitle(color: TTColors.darkBrown),
                   ),
                 ),
