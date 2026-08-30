@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/tt_colors.dart';
 import '../theme/tt_typography.dart'; // TTTypography, TTSpacing
+import 'back_button_circle.dart';
 
 /// Organic bamboo-leaf loader — fills left→right, never shows %.
 class BambooLeafLoader extends StatefulWidget {
@@ -177,28 +178,7 @@ class TinyStatusBar extends StatelessWidget {
               ),
               const SizedBox(width: 8),
             ],
-            GestureDetector(
-              onTap: onSettings,
-              child: Container(
-                width: TTSpacing.touchMin,
-                height: TTSpacing.touchMin,
-                alignment: Alignment.center,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: TTColors.creamWhite,
-                    shape: BoxShape.circle,
-                    boxShadow: TTShadows.soft,
-                  ),
-                  child: const Icon(
-                    Icons.settings_rounded,
-                    color: TTColors.softBrown,
-                    size: 26,
-                  ),
-                ),
-              ),
-            ),
+            TtSettingsButton(onPressed: onSettings),
           ],
         ),
       ),

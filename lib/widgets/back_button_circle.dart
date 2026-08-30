@@ -18,17 +18,45 @@ class TtBackButton extends StatelessWidget {
     return BounceButton(
       onPressed: onPressed,
       semanticLabel: semanticLabel,
-      child: const BackButtonCircle(),
+      child: const GoldCircleIcon(icon: Icons.chevron_left_rounded),
     );
   }
 }
 
-/// Back button face — chunky 3D gold circle with a white chevron.
-class BackButtonCircle extends StatelessWidget {
-  const BackButtonCircle({super.key});
+/// Settings control — same gold circle UI as the back button.
+class TtSettingsButton extends StatelessWidget {
+  const TtSettingsButton({
+    super.key,
+    required this.onPressed,
+    this.semanticLabel = 'Settings',
+  });
+
+  final VoidCallback? onPressed;
+  final String semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return BounceButton(
+      onPressed: onPressed,
+      semanticLabel: semanticLabel,
+      child: const GoldCircleIcon(icon: Icons.settings_rounded, iconSize: 26),
+    );
+  }
+}
+
+/// Chunky 3D gold circle with a white icon — shared by back + settings.
+class GoldCircleIcon extends StatelessWidget {
+  const GoldCircleIcon({
+    super.key,
+    required this.icon,
+    this.iconSize = 30,
+  });
+
+  final IconData icon;
+  final double iconSize;
 
   static const double _size = 52;
-  static const double _baseOffset = 4; // how much the dark base peeks out
+  static const double _baseOffset = 4;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +65,6 @@ class BackButtonCircle extends StatelessWidget {
       height: _size + _baseOffset,
       child: Stack(
         children: [
-          // ---- BASE LAYER: gives the button "thickness" (3D elevation) ----
           Positioned(
             top: _baseOffset,
             left: 0,
@@ -46,11 +73,10 @@ class BackButtonCircle extends StatelessWidget {
               height: _size,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFFC77C0E), // deep amber, sits below the face
+                color: Color(0xFFC77C0E),
               ),
             ),
           ),
-          // ---- SOFT AMBIENT SHADOW (separate from the base layer) ----
           Positioned(
             top: _baseOffset,
             left: 0,
@@ -69,7 +95,6 @@ class BackButtonCircle extends StatelessWidget {
               ),
             ),
           ),
-          // ---- FACE LAYER: glossy gold gradient + border + icon ----
           Positioned(
             top: 0,
             left: 0,
@@ -89,15 +114,21 @@ class BackButtonCircle extends StatelessWidget {
                   width: 2.5,
                 ),
               ),
-              child: const Icon(
-                Icons.chevron_left_rounded,
-                color: Colors.white,
-                size: 30,
-              ),
+              child: Icon(icon, color: Colors.white, size: iconSize),
             ),
           ),
         ],
       ),
     );
+  }
+}
+
+/// Back-compat — same face as [GoldCircleIcon] with the back chevron.
+class BackButtonCircle extends StatelessWidget {
+  const BackButtonCircle({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const GoldCircleIcon(icon: Icons.chevron_left_rounded);
   }
 }
