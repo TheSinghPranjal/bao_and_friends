@@ -28,7 +28,7 @@ class PlayGameScreen extends StatefulWidget {
 class _PlayGameScreenState extends State<PlayGameScreen>
     with TickerProviderStateMixin {
   static const _fallbackIdleVideoAsset =
-      'assets/videos/bao_character_screen_bg_video.mp4';
+      'assets/videos/bao_character_screen_bg_video_list/bao_character_screen_bg_video.mp4';
   static const _crossfadeDuration = Duration(milliseconds: 550);
 
   late final PlayGameSpec _game;

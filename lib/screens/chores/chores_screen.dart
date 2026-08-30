@@ -34,7 +34,7 @@ class _ChoreItem {
 class _ChoresScreenState extends State<ChoresScreen> {
   // Temporary idle clip until a dedicated chores bedroom video is added.
   static const _idleVideoAsset =
-      'assets/videos/bao_character_screen_bg_video.mp4';
+      'assets/videos/bao_character_screen_bg_video_list/bao_character_screen_bg_video.mp4';
 
   static const _chores = <_ChoreItem>[
     _ChoreItem('Make Bed', Icons.bed_rounded, Color(0xFFB39DDB)),
