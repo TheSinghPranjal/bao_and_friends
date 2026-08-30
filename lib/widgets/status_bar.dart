@@ -137,6 +137,7 @@ class TinyStatusBar extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             leading ??
                 GestureDetector(
@@ -155,12 +156,8 @@ class TinyStatusBar extends StatelessWidget {
                 ),
             const Spacer(),
             if (showCounters) ...[
-              _Chip(
-                icon: Icons.star_rounded,
-                iconColor: TTColors.golden,
-                value: '$stars',
-              ),
-              const SizedBox(width: 8),
+              StarCountPill(stars: stars),
+              const SizedBox(width: 10),
             ],
             TtSettingsButton(onPressed: onSettings),
           ],
@@ -170,32 +167,61 @@ class TinyStatusBar extends StatelessWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({
-    required this.icon,
-    required this.iconColor,
-    required this.value,
-  });
+/// Cream pill + golden star + count — height matches [GoldCircleIcon] (52).
+class StarCountPill extends StatelessWidget {
+  const StarCountPill({super.key, required this.stars});
 
-  final IconData icon;
-  final Color iconColor;
-  final String value;
+  final int stars;
+
+  /// Same face diameter as back / settings gold circles.
+  static const double height = 52;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      height: height,
+      padding: const EdgeInsets.fromLTRB(12, 0, 16, 0),
       decoration: BoxDecoration(
-        color: TTColors.creamWhite.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(TTSpacing.radiusPill),
-        boxShadow: TTShadows.soft,
+        color: const Color(0xFFFFF8F0),
+        borderRadius: BorderRadius.circular(height / 2),
+        boxShadow: [
+          BoxShadow(
+            color: TTColors.darkBrown.withValues(alpha: 0.14),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: iconColor, size: 20),
-          const SizedBox(width: 4),
-          Text(value, style: TTTypography.subtitle(color: TTColors.darkBrown)),
+          // Soft 3D-looking gold star
+          ShaderMask(
+            blendMode: BlendMode.srcIn,
+            shaderCallback: (bounds) => const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFFFE066),
+                Color(0xFFFFC93C),
+                Color(0xFFF5A623),
+              ],
+            ).createShader(bounds),
+            child: const Icon(
+              Icons.star_rounded,
+              size: 30,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '$stars',
+            style: TTTypography.title(color: const Color(0xFF5A5A5A)).copyWith(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              height: 1,
+            ),
+          ),
         ],
       ),
     );

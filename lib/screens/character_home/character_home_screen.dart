@@ -52,7 +52,8 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
   bool _sleepLoaded = false;
   Timer? _sleepCheckTimer;
   Map<String, ActivityTimerStatus> _timerByRoute = {};
-  CharacterBgPeriod? _awakePeriod;
+  /// Tracks period or special clip key so we swap when a window starts/ends.
+  String? _awakeClipKey;
 
   /// Visual selection in the bottom sheet (matches mock white-circle + orange).
   String? _selectedRoute;
@@ -74,7 +75,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     unawaited(_refreshTimers());
     unawaited(_loadStars());
     _sleepCheckTimer = Timer.periodic(
-      const Duration(minutes: 1),
+      const Duration(seconds: 30),
       (_) {
         unawaited(_refreshSleepState());
         unawaited(_refreshTimers());
@@ -112,17 +113,22 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     final sleeping = await SleepStore.isSleeping();
     if (!mounted) return;
 
-    final period = CharacterBgVideos.periodFor();
-    final periodChanged = !sleeping && period != _awakePeriod;
+    // Special daytime clips (e.g. cleaning floor 2:15–2:30) override sleep video
+    // so they still play during the noon nap window.
+    final special = CharacterBgVideos.specialFor();
+    final clipKey = special != null
+        ? 'special:${special.id}'
+        : (sleeping ? 'sleep' : CharacterBgVideos.awakeKeyFor());
+    final clipChanged = clipKey != _awakeClipKey;
 
     setState(() {
       _isSleeping = sleeping;
       _sleepLoaded = true;
-      if (!sleeping) _awakePeriod = period;
+      _awakeClipKey = clipKey;
       // Emphasize Wake Up when Bao is asleep (same selected treatment as mock).
-      if (sleeping) {
+      if (sleeping && special == null) {
         _selectedRoute = '/wake-up';
-      } else if (_selectedRoute == '/wake-up') {
+      } else if (_selectedRoute == '/wake-up' && !sleeping) {
         _selectedRoute = null;
       }
     });
@@ -130,7 +136,9 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     if (_isBao &&
         (initVideo ||
             sleeping != _videoShowsSleeping ||
-            periodChanged)) {
+            clipChanged ||
+            (special != null &&
+                !_currentAwakeAsset.contains(special.asset.split('/').last)))) {
       await _initVideo(sleeping: sleeping);
     }
   }
@@ -142,36 +150,41 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
 
   String get _currentAwakeAsset {
     final src = _video?.dataSource ?? '';
-    for (final asset in CharacterBgVideos.allPeriodAssets) {
+    for (final asset in [
+      ...CharacterBgVideos.allSpecialAssets,
+      ...CharacterBgVideos.allPeriodAssets,
+      CharacterBgVideos.fallback,
+    ]) {
       if (src.contains(asset.split('/').last)) return asset;
-    }
-    if (src.contains('bao_character_screen_bg_video.mp4')) {
-      return CharacterBgVideos.fallback;
     }
     return '';
   }
 
   Future<void> _initVideo({required bool sleeping}) async {
-    final preferred =
-        sleeping ? _baoSleepingVideoAsset : CharacterBgVideos.assetForNow();
+    final special = CharacterBgVideos.specialFor();
+    // Special events always win over sleep + default period videos.
+    final preferred = special != null
+        ? special.asset
+        : (sleeping
+            ? _baoSleepingVideoAsset
+            : CharacterBgVideos.assetForNow());
     final previous = _video;
 
-    if (!sleeping) {
-      _awakePeriod = CharacterBgVideos.periodFor();
-    }
+    _awakeClipKey = special != null
+        ? 'special:${special.id}'
+        : (sleeping ? 'sleep' : CharacterBgVideos.awakeKeyFor());
 
-    // Already showing the correct clip.
-    if (previous != null &&
+    final alreadyCorrect = previous != null &&
         previous.value.isInitialized &&
-        sleeping == _videoShowsSleeping &&
-        (sleeping || _currentAwakeAsset == preferred)) {
-      return;
-    }
+        (previous.dataSource.contains(preferred.split('/').last));
+    if (alreadyCorrect) return;
 
     previous?.pause();
 
     final loaded = await _tryLoadAsset(preferred) ??
-        (!sleeping ? await _tryLoadAsset(CharacterBgVideos.fallback) : null);
+        (special != null || !sleeping
+            ? await _tryLoadAsset(CharacterBgVideos.fallback)
+            : null);
 
     if (loaded == null) return;
 

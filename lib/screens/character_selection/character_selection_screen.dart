@@ -5,6 +5,7 @@ import '../../models/character.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
+import '../../widgets/status_bar.dart';
 import '../../widgets/bounce_button.dart';
 
 /// Screen 2 — Character Selection (Family Carousel).
@@ -229,56 +230,7 @@ class _TopBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           TtBackButton(onPressed: onBack),
-          _CounterPill(
-            icon: Icons.star_rounded,
-            iconColor: const Color(0xFFFFC93C),
-            value: stars,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CounterPill extends StatelessWidget {
-  const _CounterPill({
-    required this.icon,
-    required this.iconColor,
-    required this.value,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final int value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x22000000),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: iconColor, size: 20),
-          const SizedBox(width: 6),
-          Text(
-            '$value',
-            style: const TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 15,
-              color: Color(0xFF3A2E1F),
-            ),
-          ),
+          StarCountPill(stars: stars),
         ],
       ),
     );

@@ -115,8 +115,8 @@ abstract final class DefaultSchedules {
   /// Night sleep start / end and noon nap start (wake uses these).
   static const nightSleepStart = 22 * 60; // 10pm
   static const nightSleepEnd = 6 * 60; // 6am
-  static const noonNapStart = 14 * 60; // 2pm
-  static const noonNapMinutes = 60; // nap window length for scheduling cues
+  static const noonNapStart = 14 * 60 + 30; // 2:30pm
+  static const noonNapMinutes = 30; // nap until 3:00pm
 
   /// How long Bao stays awake after a wake-up before auto-sleep.
   static const awakeAfterWakeMinutes = 60;
