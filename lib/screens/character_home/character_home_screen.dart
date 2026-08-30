@@ -15,7 +15,6 @@ import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
 import '../../widgets/bao_face.dart';
 import '../../widgets/bounce_button.dart';
-import '../../widgets/circular_timer_ring.dart';
 import '../../widgets/status_bar.dart';
 
 /// Character Home — looping bedroom video (Bao) + frosted bottom activity sheet.
@@ -455,7 +454,6 @@ class _SheetNavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final due = timer?.isDue ?? false;
-    final progress = timer?.progress ?? 1.0;
     final emphasize = selected || due;
     final labelColor = emphasize ? _selectedLabel : _inactive;
 
@@ -475,6 +473,9 @@ class _SheetNavButton extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: emphasize ? Colors.white : Colors.transparent,
+                border: due
+                    ? Border.all(color: accent, width: 3)
+                    : null,
                 boxShadow: emphasize
                     ? [
                         BoxShadow(
@@ -486,13 +487,7 @@ class _SheetNavButton extends StatelessWidget {
                       ]
                     : null,
               ),
-              child: CircularTimerRing(
-                progress: progress,
-                isDue: due && item.route != '/learn',
-                color: accent,
-                size: 46,
-                child: Icon(item.icon, color: _inactive, size: 22),
-              ),
+              child: Icon(item.icon, color: _inactive, size: 22),
             ),
             const SizedBox(height: 4),
             Text(
