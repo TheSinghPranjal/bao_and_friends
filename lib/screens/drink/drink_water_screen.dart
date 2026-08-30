@@ -262,8 +262,6 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
               TinyStatusBar(
                 showCounters: true,
                 stars: 12 + (_drunk.isEmpty ? 0 : 1),
-                beans: 3,
-                level: 2,
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop()),
               ),
@@ -531,20 +529,12 @@ class RewardPopup extends StatelessWidget {
                   '+${reward.stars}',
                   style: TTTypography.title(),
                 ),
-                const SizedBox(width: 16),
-              ],
-              if (reward.magicBeans > 0) ...[
-                const Icon(Icons.eco_rounded, color: TTColors.bamboo, size: 36),
-                Text(
-                  '+${reward.magicBeans}',
-                  style: TTTypography.title(),
-                ),
               ],
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            'Stars & Magic Beans burst – placeholder',
+            'Stars burst – placeholder',
             style: TTTypography.caption(),
           ),
           const SizedBox(height: 20),

@@ -255,8 +255,6 @@ class _EatSandwichScreenState extends State<EatSandwichScreen>
               TinyStatusBar(
                 showCounters: true,
                 stars: 12 + (_eaten.isEmpty ? 0 : 1),
-                beans: 3,
-                level: 2,
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop(false)),
               ),

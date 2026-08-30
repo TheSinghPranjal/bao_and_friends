@@ -113,13 +113,11 @@ class _LeafPainter extends CustomPainter {
       oldDelegate.color != color;
 }
 
-/// Persistent top status bar: Stars, Beans, Level, Settings.
+/// Persistent top status bar: Stars + Settings.
 class TinyStatusBar extends StatelessWidget {
   const TinyStatusBar({
     super.key,
     this.stars = 0,
-    this.beans = 0,
-    this.level = 1,
     this.onSettings,
     this.onProfile,
     this.showCounters = true,
@@ -127,8 +125,6 @@ class TinyStatusBar extends StatelessWidget {
   });
 
   final int stars;
-  final int beans;
-  final int level;
   final VoidCallback? onSettings;
   final VoidCallback? onProfile;
   final bool showCounters;
@@ -163,18 +159,6 @@ class TinyStatusBar extends StatelessWidget {
                 icon: Icons.star_rounded,
                 iconColor: TTColors.golden,
                 value: '$stars',
-              ),
-              const SizedBox(width: 8),
-              _Chip(
-                icon: Icons.eco_rounded,
-                iconColor: TTColors.bamboo,
-                value: '$beans',
-              ),
-              const SizedBox(width: 8),
-              _Chip(
-                icon: Icons.emoji_events_rounded,
-                iconColor: TTColors.ribbonOrange,
-                value: 'Lv $level',
               ),
               const SizedBox(width: 8),
             ],
