@@ -336,10 +336,10 @@ class _ActivityBottomSheet extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.42),
+            color: Colors.white.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(32),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.55),
+              color: Colors.white.withValues(alpha: 0.28),
               width: 1.2,
             ),
             boxShadow: [
