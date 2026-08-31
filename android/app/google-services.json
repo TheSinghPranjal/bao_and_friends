@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "331546767774",
+    "project_id": "bao-and-friends",
+    "storage_bucket": "bao-and-friends.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:331546767774:android:36ae8813ebee3acdeca68f",
+        "android_client_info": {
+          "package_name": "com.lazy_bear_club.bao_and_friends"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAG24Lldf8JIEXvy_Fg2l8XqxqFG479hlA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
