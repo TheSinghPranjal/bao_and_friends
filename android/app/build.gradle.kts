@@ -1,10 +1,26 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
+
     // Google services Gradle plugin (Firebase)
     id("com.google.gms.google-services")
+
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// ---------------------------------------------------------
+// RELEASE KEYSTORE CONFIGURATION
+// ---------------------------------------------------------
+
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -27,15 +43,37 @@ android {
 
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
+
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    // -------------------------------------------------------
+    // SIGNING CONFIGURATIONS
+    // -------------------------------------------------------
+
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
+    }
+
+    // -------------------------------------------------------
+    // BUILD TYPES
+    // -------------------------------------------------------
+
     buildTypes {
-        release {
-            // TODO: Replace the debug signing configuration with your
-            // release keystore configuration before publishing to Google Play.
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+
+            // Optional optimizations for production
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
@@ -45,9 +83,9 @@ flutter {
 }
 
 dependencies {
-    // Import the Firebase BoM
+    // Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
 
-    // Firebase Analytics (BoM manages the version)
+    // Firebase Analytics
     implementation("com.google.firebase:firebase-analytics")
 }
