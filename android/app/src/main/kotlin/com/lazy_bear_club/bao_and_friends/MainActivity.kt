@@ -1,4 +1,4 @@
-package com.example.bao_and_friends
+package com.lazy_bear_club.bao_and_friends
 
 import io.flutter.embedding.android.FlutterActivity
 

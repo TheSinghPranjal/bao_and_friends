@@ -1,10 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/activity_schedule.dart';
-import '../models/rewards.dart';
 import 'schedule_store.dart';
 
-/// Persists wake time and computes sleep from schedule windows + 1h awake rule.
+/// Persists wake time and computes sleep from schedule windows + awake rule.
 class SleepStore {
   SleepStore._();
 
@@ -39,30 +38,46 @@ class SleepStore {
     return (nightStart, nightEnd, noonNap);
   }
 
-  /// True when [now] falls in night sleep (wrapping overnight) or noon nap hour.
+  /// Night sleep window only (10pm–6am by default), wrapping midnight.
+  static Future<bool> inNightSleepWindow({DateTime? now}) async {
+    final t = now ?? DateTime.now();
+    final minutes = t.hour * 60 + t.minute;
+    final (nightStart, nightEnd, _) = await sleepSlots();
+    if (nightStart > nightEnd) {
+      return minutes >= nightStart || minutes < nightEnd;
+    }
+    return minutes >= nightStart && minutes < nightEnd;
+  }
+
+  /// True when [now] falls in night sleep or noon nap.
   static Future<bool> inScheduledSleepWindow({DateTime? now}) async {
     final t = now ?? DateTime.now();
     final minutes = t.hour * 60 + t.minute;
-    final (nightStart, nightEnd, noonNap) = await sleepSlots();
+    final (_, _, noonNap) = await sleepSlots();
 
-    final inNight = nightStart > nightEnd
-        ? (minutes >= nightStart || minutes < nightEnd)
-        : (minutes >= nightStart && minutes < nightEnd);
+    if (await inNightSleepWindow(now: t)) return true;
 
     final napEnd = noonNap + DefaultSchedules.noonNapMinutes;
-    final inNap = minutes >= noonNap && minutes < napEnd;
-
-    return inNight || inNap;
+    return minutes >= noonNap && minutes < napEnd;
   }
 
-  /// During night window (10pm–6am), Bao may voluntarily sleep again after wake.
+  /// During night window, Bao may voluntarily sleep again after wake.
   static Future<bool> canReturnToSleep({DateTime? now}) async {
-    return inScheduledSleepWindow(now: now);
+    return inNightSleepWindow(now: now);
+  }
+
+  /// Awake duration after wake: 30 min at night, otherwise noon-nap default.
+  static Future<Duration> awakeDurationAfterWake({DateTime? now}) async {
+    if (await inNightSleepWindow(now: now)) {
+      return Duration(minutes: DefaultSchedules.awakeAfterNightWakeMinutes);
+    }
+    return Duration(minutes: DefaultSchedules.awakeAfterWakeMinutes);
   }
 
   /// Sleep only inside scheduled windows.
-  /// - Outside 10pm–6am and noon nap → always awake (even on first launch).
-  /// - Inside a window → sleeping unless woken within the last hour.
+  /// - Outside windows → always awake.
+  /// - Inside night → sleeping unless woken within last 30 minutes.
+  /// - Inside noon nap → sleeping unless woken within last hour.
   static Future<bool> isSleeping({DateTime? now}) async {
     final t = now ?? DateTime.now();
     final inWindow = await inScheduledSleepWindow(now: t);
@@ -71,11 +86,7 @@ class SleepStore {
     final woke = await lastWokeAt();
     if (woke == null) return true;
 
-    final limit = Duration(minutes: DefaultSchedules.awakeAfterWakeMinutes);
-    // Keep WakeUpRules in sync when both are 1h.
-    final awakeLimit = WakeUpRules.sleepInterval > limit
-        ? WakeUpRules.sleepInterval
-        : limit;
+    final awakeLimit = await awakeDurationAfterWake(now: t);
     if (t.difference(woke) < awakeLimit) return false;
     return true;
   }
@@ -84,7 +95,7 @@ class SleepStore {
     final woke = await lastWokeAt();
     if (woke == null) return Duration.zero;
     final t = now ?? DateTime.now();
-    final limit = Duration(minutes: DefaultSchedules.awakeAfterWakeMinutes);
+    final limit = await awakeDurationAfterWake(now: t);
     final elapsed = t.difference(woke);
     if (elapsed >= limit) return Duration.zero;
     return limit - elapsed;
@@ -94,7 +105,7 @@ class SleepStore {
   static Future<void> goBackToSleep() async {
     final prefs = await SharedPreferences.getInstance();
     final past = DateTime.now().subtract(
-      Duration(minutes: DefaultSchedules.awakeAfterWakeMinutes + 1),
+      Duration(minutes: DefaultSchedules.awakeAfterNightWakeMinutes + 1),
     );
     await prefs.setInt(_lastWokeKey, past.millisecondsSinceEpoch);
   }
@@ -123,7 +134,7 @@ class SleepStore {
       );
     }
     final remaining = await timeUntilSleep(now: t);
-    final total = Duration(minutes: DefaultSchedules.awakeAfterWakeMinutes);
+    final total = await awakeDurationAfterWake(now: t);
     final progress =
         (remaining.inSeconds / total.inSeconds.clamp(1, 86400)).clamp(0.0, 1.0);
     return ActivityTimerStatus(

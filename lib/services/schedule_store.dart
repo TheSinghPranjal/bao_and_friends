@@ -80,32 +80,20 @@ class ScheduleStore {
 
   // ---- Window / due math ----
 
-  /// Most recent scheduled slot ≤ [now] (wrapping overnight).
-  static DateTime currentWindowStart(
+  /// Most recent scheduled slot ≤ [now] **today only**.
+  /// Returns null before the first slot of the calendar day (fresh day = nothing due).
+  static DateTime? currentWindowStartToday(
     List<MinuteOfDay> slots,
     DateTime now,
   ) {
-    if (slots.isEmpty) {
-      return DateTime(now.year, now.month, now.day);
-    }
+    if (slots.isEmpty) return null;
     final minutes = now.hour * 60 + now.minute;
     MinuteOfDay? best;
     for (final s in slots) {
       if (s <= minutes) best = s;
     }
-    if (best != null) {
-      return DateTime(now.year, now.month, now.day, best ~/ 60, best % 60);
-    }
-    // Before first slot today → last slot yesterday
-    final last = slots.last;
-    final yesterday = now.subtract(const Duration(days: 1));
-    return DateTime(
-      yesterday.year,
-      yesterday.month,
-      yesterday.day,
-      last ~/ 60,
-      last % 60,
-    );
+    if (best == null) return null;
+    return DateTime(now.year, now.month, now.day, best ~/ 60, best % 60);
   }
 
   static DateTime nextSlotAfter(List<MinuteOfDay> slots, DateTime now) {
@@ -142,14 +130,31 @@ class ScheduleStore {
 
     final t = now ?? DateTime.now();
     final slots = await timesFor(id);
-    final window = currentWindowStart(slots, t);
     final next = nextSlotAfter(slots, t);
+    final window = currentWindowStartToday(slots, t);
+
+    // Brand-new calendar day (before first cue) → no due, no highlight.
+    if (window == null) {
+      return ActivityTimerStatus(
+        id: id,
+        progress: 1,
+        isDue: false,
+        nextAt: next,
+        windowStart: null,
+      );
+    }
+
     final done = await lastCompleted(id);
-    final isDue = done == null || !done.isAfter(window.subtract(const Duration(seconds: 1)));
+    // Only completions at/after today's window count; yesterday does not carry over.
+    final sameDayDone = done != null &&
+        done.year == t.year &&
+        done.month == t.month &&
+        done.day == t.day &&
+        !done.isBefore(window);
+    final isDue = !sameDayDone;
 
     final span = next.difference(window).inSeconds.clamp(1, 48 * 3600);
     final remaining = next.difference(t).inSeconds.clamp(0, span);
-    // Due → empty ring; satisfied → depletes toward next slot.
     final progress = isDue ? 0.0 : (remaining / span).clamp(0.0, 1.0);
 
     return ActivityTimerStatus(

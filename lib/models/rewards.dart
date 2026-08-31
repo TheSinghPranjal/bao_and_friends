@@ -398,9 +398,9 @@ abstract final class MakeBedRules {
   }
 }
 
-/// Wake Up — Bao sleeps every [sleepInterval]; wake resets the timer.
+/// Wake Up — after a night wake Bao stays awake [DefaultSchedules.awakeAfterNightWakeMinutes].
 abstract final class WakeUpRules {
-  static const Duration sleepInterval = Duration(hours: 1);
+  static const Duration sleepInterval = Duration(minutes: 30);
 
   static const RewardResult reward = RewardResult(
     stars: 1,
