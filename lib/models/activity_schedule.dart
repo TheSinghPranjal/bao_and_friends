@@ -118,8 +118,11 @@ abstract final class DefaultSchedules {
   static const noonNapStart = 14 * 60 + 30; // 2:30pm
   static const noonNapMinutes = 30; // nap until 3:00pm
 
-  /// How long Bao stays awake after a wake-up before auto-sleep.
+  /// How long Bao stays awake after a wake-up during noon nap.
   static const awakeAfterWakeMinutes = 60;
+
+  /// How long Bao stays awake after a wake-up during night (10pm–6am).
+  static const awakeAfterNightWakeMinutes = 30;
 
   static List<MinuteOfDay> defaultsFor(ActivityId id) => switch (id) {
         ActivityId.drink => List.of(drink),

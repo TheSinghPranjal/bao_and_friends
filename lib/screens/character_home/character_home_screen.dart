@@ -106,6 +106,14 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
         ...map,
         '/wake-up': wake,
       };
+      // Drop selection highlight unless that route is actually due (or wake while asleep).
+      final selected = _selectedRoute;
+      if (selected != null && selected != '/wake-up') {
+        final status = _timerByRoute[selected];
+        if (status == null || !status.isDue) {
+          _selectedRoute = null;
+        }
+      }
     });
   }
 
@@ -113,19 +121,23 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     final sleeping = await SleepStore.isSleeping();
     if (!mounted) return;
 
-    // Special daytime clips (e.g. cleaning floor 2:15–2:30) override sleep video
-    // so they still play during the noon nap window.
+    // Special daytime clips override sleep video when active.
     final special = CharacterBgVideos.specialFor();
+    final nightAwake =
+        !sleeping && await SleepStore.inNightSleepWindow();
     final clipKey = special != null
         ? 'special:${special.id}'
-        : (sleeping ? 'sleep' : CharacterBgVideos.awakeKeyFor());
+        : sleeping
+            ? 'sleep'
+            : (nightAwake
+                ? 'night_awake_fallback'
+                : CharacterBgVideos.awakeKeyFor());
     final clipChanged = clipKey != _awakeClipKey;
 
     setState(() {
       _isSleeping = sleeping;
       _sleepLoaded = true;
       _awakeClipKey = clipKey;
-      // Emphasize Wake Up when Bao is asleep (same selected treatment as mock).
       if (sleeping && special == null) {
         _selectedRoute = '/wake-up';
       } else if (_selectedRoute == '/wake-up' && !sleeping) {
@@ -138,7 +150,8 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
             sleeping != _videoShowsSleeping ||
             clipChanged ||
             (special != null &&
-                !_currentAwakeAsset.contains(special.asset.split('/').last)))) {
+                !_currentAwakeAsset
+                    .contains(special.asset.split('/').last)))) {
       await _initVideo(sleeping: sleeping);
     }
   }
@@ -162,21 +175,35 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
 
   Future<void> _initVideo({required bool sleeping}) async {
     final special = CharacterBgVideos.specialFor();
-    // Special events always win over sleep + default period videos.
-    final preferred = special != null
-        ? special.asset
-        : (sleeping
-            ? _baoSleepingVideoAsset
-            : CharacterBgVideos.assetForNow());
+    final nightAwake =
+        !sleeping && await SleepStore.inNightSleepWindow();
+
+    // Priority: special → sleep → night-wake fallback → period default.
+    final String preferred;
+    if (special != null) {
+      preferred = special.asset;
+    } else if (sleeping) {
+      preferred = _baoSleepingVideoAsset;
+    } else if (nightAwake) {
+      // After a night wake (10pm–6am), show the generic bedroom clip.
+      preferred = CharacterBgVideos.fallback;
+    } else {
+      preferred = CharacterBgVideos.assetForNow();
+    }
+
     final previous = _video;
 
     _awakeClipKey = special != null
         ? 'special:${special.id}'
-        : (sleeping ? 'sleep' : CharacterBgVideos.awakeKeyFor());
+        : sleeping
+            ? 'sleep'
+            : (nightAwake
+                ? 'night_awake_fallback'
+                : CharacterBgVideos.awakeKeyFor());
 
     final alreadyCorrect = previous != null &&
         previous.value.isInitialized &&
-        (previous.dataSource.contains(preferred.split('/').last));
+        previous.dataSource.contains(preferred.split('/').last);
     if (alreadyCorrect) return;
 
     previous?.pause();
@@ -511,7 +538,7 @@ class _SheetNavButton extends StatelessWidget {
     final labelColor = emphasize ? _selectedLabel : _inactive;
 
     return Opacity(
-      opacity: dimmed ? 0.4 : 1,
+      opacity: dimmed ? 0.45 : 1,
       child: BounceButton(
         onPressed: onTap,
         semanticLabel: item.label,
@@ -525,20 +552,22 @@ class _SheetNavButton extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: emphasize ? Colors.white : Colors.transparent,
-                border: due
-                    ? Border.all(color: accent, width: 3)
-                    : null,
-                boxShadow: emphasize
-                    ? [
-                        BoxShadow(
-                          color: (due ? accent : TTColors.darkBrown)
-                              .withValues(alpha: due ? 0.35 : 0.10),
-                          blurRadius: due ? 10 : 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
+                // Always a light disc so icons stay readable on the frosted bar.
+                color: emphasize
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.88),
+                border: Border.all(
+                  color: due ? accent : Colors.white.withValues(alpha: 0.95),
+                  width: due ? 3 : 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (due ? accent : TTColors.darkBrown)
+                        .withValues(alpha: due ? 0.35 : 0.12),
+                    blurRadius: due ? 10 : 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Icon(item.icon, color: _inactive, size: 22),
             ),
