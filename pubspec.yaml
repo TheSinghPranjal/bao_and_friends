@@ -83,7 +83,8 @@ flutter:
   assets:
     - assets/videos/splash_screen_bg_video.mp4
     - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_bg_video.mp4
-    - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_night_bg_video.mp4
+    - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_night_yawning_bg_video.mp4
+    - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_night_sleeping_bg_video.mp4
     - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_morning_bg_video.mp4
     - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_noon_bg_video.mp4
     - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_evening_bg_video.mp4
@@ -111,6 +112,8 @@ flutter:
     - assets/videos/chore/brush/bao_brushing_teeth.mp4
     - assets/videos/chore/wash_face/bao_not_washing_his_face.mp4
     - assets/videos/chore/wash_face/bao_washing_face.mp4
+    - assets/videos/chore/bath/bao_not_taking_a_bath_video.mp4
+    - assets/videos/chore/bath/bao_taking_a_bath_video.mp4
     - assets/videos/chore/comb_hair/bao_not_coming_hair.mp4
     - assets/videos/chore/comb_hair/bao_combing_hair.mp4
     - assets/videos/play/play_screen_video.mp4

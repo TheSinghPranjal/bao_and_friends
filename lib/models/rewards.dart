@@ -265,8 +265,8 @@ abstract final class PlayGameRules {
 
 /// Chores reward math — tap floating chores (same loop shape as Feed).
 abstract final class ChoresRules {
-  static const int maxChores = 9;
-  static const int choresForFullReward = 9;
+  static const int maxChores = 10;
+  static const int choresForFullReward = 10;
   static const Duration reminderInterval = Duration(hours: 4);
 
   /// 1 chore → 1 star. All required chores → 3 stars + 1 Magic Bean.
@@ -344,6 +344,33 @@ abstract final class WashFaceRules {
   }
 }
 
+/// Bath reward math — tap floating bath bubbles.
+abstract final class BathRules {
+  static const int maxSteps = 4;
+  static const int stepsForFullReward = 4;
+  static const Duration reminderInterval = Duration(hours: 6);
+
+  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForSteps(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Keep bathing!');
+    }
+    if (completed >= stepsForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao is squeaky clean!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Nice bathing! One star for you!'
+          : 'Great bathing! Keep going!',
+    );
+  }
+}
+
 /// Brush Teeth reward math (same loop as Make Bed; reached from Chores).
 abstract final class BrushTeethRules {
   static const int maxSteps = 4;
@@ -414,6 +441,7 @@ abstract final class ChoreTimers {
   static const Duration brushTeeth = Duration(hours: 6);
   static const Duration makeBed = Duration(hours: 8);
   static const Duration washFace = Duration(hours: 8);
+  static const Duration bath = Duration(hours: 6);
   static const Duration combHair = Duration(hours: 8);
   static const Duration wearShoes = Duration(hours: 24);
 }
