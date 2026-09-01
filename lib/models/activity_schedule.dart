@@ -9,6 +9,7 @@ enum ActivityId {
   makeBed,
   brushTeeth,
   washFace,
+  bath,
   learn,
 }
 
@@ -23,6 +24,7 @@ extension ActivityIdX on ActivityId {
         ActivityId.makeBed => 'Make Bed',
         ActivityId.brushTeeth => 'Brush Teeth',
         ActivityId.washFace => 'Wash Face',
+        ActivityId.bath => 'Bath',
         ActivityId.learn => 'Learn',
       };
 
@@ -33,7 +35,8 @@ extension ActivityIdX on ActivityId {
         ActivityId.wake => 'Wake Up',
         ActivityId.makeBed ||
         ActivityId.brushTeeth ||
-        ActivityId.washFace =>
+        ActivityId.washFace ||
+        ActivityId.bath =>
           'Chores',
         ActivityId.learn => 'Learn',
       };
@@ -46,7 +49,8 @@ extension ActivityIdX on ActivityId {
         ActivityId.wake => '/wake-up',
         ActivityId.makeBed ||
         ActivityId.brushTeeth ||
-        ActivityId.washFace =>
+        ActivityId.washFace ||
+        ActivityId.bath =>
           '/chores',
         ActivityId.learn => '/learn',
       };
@@ -59,6 +63,7 @@ extension ActivityIdX on ActivityId {
         ActivityId.makeBed => Icons.bed_rounded,
         ActivityId.brushTeeth => Icons.brush_rounded,
         ActivityId.washFace => Icons.soap_rounded,
+        ActivityId.bath => Icons.bathtub_rounded,
         ActivityId.learn => Icons.menu_book_rounded,
       };
 
@@ -70,6 +75,7 @@ extension ActivityIdX on ActivityId {
         ActivityId.makeBed => const Color(0xFF7CB342),
         ActivityId.brushTeeth => const Color(0xFF00ACC1),
         ActivityId.washFace => const Color(0xFF1E88E5),
+        ActivityId.bath => const Color(0xFF00838F),
         ActivityId.learn => const Color(0xFF7EC8E8),
       };
 }
@@ -112,6 +118,9 @@ abstract final class DefaultSchedules {
   /// Wash face: 7am, 9pm
   static const washFace = <MinuteOfDay>[7 * 60, 21 * 60];
 
+  /// Bath: 7:15am, 6:15pm
+  static const bath = <MinuteOfDay>[7 * 60 + 15, 18 * 60 + 15];
+
   /// Night sleep start / end and noon nap start (wake uses these).
   static const nightSleepStart = 22 * 60; // 10pm
   static const nightSleepEnd = 6 * 60; // 6am
@@ -131,6 +140,7 @@ abstract final class DefaultSchedules {
         ActivityId.makeBed => List.of(makeBed),
         ActivityId.brushTeeth => List.of(brushTeeth),
         ActivityId.washFace => List.of(washFace),
+        ActivityId.bath => List.of(bath),
         ActivityId.wake => [
             nightSleepStart,
             nightSleepEnd,
@@ -148,6 +158,7 @@ abstract final class DefaultSchedules {
     ActivityId.makeBed,
     ActivityId.brushTeeth,
     ActivityId.washFace,
+    ActivityId.bath,
   ];
 }
 

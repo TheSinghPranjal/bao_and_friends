@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/character_home/character_home_screen.dart';
 import '../screens/character_selection/character_selection_screen.dart';
 import '../screens/chores/chores_screen.dart';
+import '../screens/chores/bath_screen.dart';
 import '../screens/chores/brush_teeth_screen.dart';
 import '../screens/chores/comb_hair_screen.dart';
 import '../screens/chores/make_bed_screen.dart';
@@ -99,6 +100,10 @@ GoRouter createAppRouter({bool skipSplash = false}) {
       GoRoute(
         path: '/wash-face',
         builder: (context, state) => const WashFaceScreen(),
+      ),
+      GoRoute(
+        path: '/bath',
+        builder: (context, state) => const BathScreen(),
       ),
       GoRoute(
         path: '/comb-hair',
