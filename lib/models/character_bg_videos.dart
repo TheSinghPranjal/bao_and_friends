@@ -1,6 +1,7 @@
 /// Time-of-day + timed special-event bedroom backgrounds for Bao's home (awake).
 enum CharacterBgPeriod {
-  night, // 10pm – 6am
+  nightYawning, // 10pm – midnight
+  nightSleeping, // midnight – 6am
   morning, // 6am – 12 noon
   noon, // 12 noon – 5pm
   evening, // 5pm – 10pm
@@ -35,7 +36,10 @@ abstract final class CharacterBgVideos {
   /// Generic fallback while period clips are placeholders / missing.
   static const fallback = '$folder/bao_character_screen_bg_video.mp4';
 
-  static const night = '$folder/bao_character_screen_night_bg_video.mp4';
+  static const nightYawning =
+      '$folder/bao_character_screen_night_yawning_bg_video.mp4';
+  static const nightSleeping =
+      '$folder/bao_character_screen_night_sleeping_bg_video.mp4';
   static const morning = '$folder/bao_character_screen_morning_bg_video.mp4';
   static const noon = '$folder/bao_character_screen_noon_bg_video.mp4';
   static const evening = '$folder/bao_character_screen_evening_bg_video.mp4';
@@ -49,7 +53,13 @@ abstract final class CharacterBgVideos {
   static const makingPancakes =
       '$folder/bao_character_screen_bg_making_pancakes_video.mp4';
 
-  static const allPeriodAssets = <String>[night, morning, noon, evening];
+  static const allPeriodAssets = <String>[
+    nightYawning,
+    nightSleeping,
+    morning,
+    noon,
+    evening,
+  ];
 
   /// Exclusive end was too early for "until 2:30" — ends are inclusive.
   /// 12:30pm – 1:00pm
@@ -93,9 +103,13 @@ abstract final class CharacterBgVideos {
   static CharacterBgPeriod periodFor([DateTime? now]) {
     final t = now ?? DateTime.now();
     final minutes = t.hour * 60 + t.minute;
-    // Night wraps midnight: 22:00 → 06:00
-    if (minutes >= 22 * 60 || minutes < 6 * 60) {
-      return CharacterBgPeriod.night;
+    // 10:00pm – midnight
+    if (minutes >= 22 * 60) {
+      return CharacterBgPeriod.nightYawning;
+    }
+    // midnight – 6:00am
+    if (minutes < 6 * 60) {
+      return CharacterBgPeriod.nightSleeping;
     }
     if (minutes < 12 * 60) return CharacterBgPeriod.morning;
     if (minutes < 17 * 60) return CharacterBgPeriod.noon;
@@ -103,7 +117,8 @@ abstract final class CharacterBgVideos {
   }
 
   static String assetForPeriod(CharacterBgPeriod period) => switch (period) {
-        CharacterBgPeriod.night => night,
+        CharacterBgPeriod.nightYawning => nightYawning,
+        CharacterBgPeriod.nightSleeping => nightSleeping,
         CharacterBgPeriod.morning => morning,
         CharacterBgPeriod.noon => noon,
         CharacterBgPeriod.evening => evening,

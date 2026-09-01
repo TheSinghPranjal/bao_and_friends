@@ -40,6 +40,7 @@ class _ChoresScreenState extends State<ChoresScreen> {
     _ChoreItem('Make Bed', Icons.bed_rounded, Color(0xFFB39DDB)),
     _ChoreItem('Brush Teeth', Icons.clean_hands_rounded, Color(0xFF80DEEA)),
     _ChoreItem('Wash Face', Icons.water_drop_outlined, Color(0xFF90CAF9)),
+    _ChoreItem('Bath', Icons.bathtub_rounded, Color(0xFF4DD0E1)),
     _ChoreItem('Comb Hair', Icons.content_cut_rounded, Color(0xFFFFCC80)),
     _ChoreItem('Get Dressed', Icons.checkroom_rounded, Color(0xFFF48FB1)),
     _ChoreItem('Wear Shoes', Icons.snowshoeing_rounded, Color(0xFFA5D6A7)),
@@ -105,6 +106,11 @@ class _ChoresScreenState extends State<ChoresScreen> {
       setState(() => _done.add(index));
       await ScheduleStore.markCompleted(ActivityId.washFace);
     } else if (index == 3) {
+      final completed = await context.push<bool>('/bath');
+      if (!mounted || completed != true) return;
+      setState(() => _done.add(index));
+      await ScheduleStore.markCompleted(ActivityId.bath);
+    } else if (index == 4) {
       final completed = await context.push<bool>('/comb-hair');
       if (!mounted || completed != true) return;
       setState(() => _done.add(index));
