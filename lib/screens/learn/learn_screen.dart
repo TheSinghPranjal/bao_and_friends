@@ -7,9 +7,9 @@ import 'package:video_player/video_player.dart';
 import '../../models/character_bg_videos.dart';
 import '../../models/learn_topics.dart';
 import '../../theme/tt_colors.dart';
-import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
 import '../../widgets/item_tray_bar.dart';
+import '../../widgets/rotating_headline.dart';
 import '../../widgets/status_bar.dart';
 
 /// Learn Activity — pick topics from a bottom tray (same pattern as Play / Chores).
@@ -26,6 +26,7 @@ class _LearnScreenState extends State<LearnScreen> {
   final Set<String> _done = {};
   VideoPlayerController? _idleVideo;
   bool _idleReady = false;
+  bool _disposed = false;
 
   @override
   void initState() {
@@ -37,14 +38,18 @@ class _LearnScreenState extends State<LearnScreen> {
     final idle = VideoPlayerController.asset(_idleVideoAsset);
     try {
       await idle.initialize();
-      if (!mounted) {
+      if (!mounted || _disposed) {
         await idle.dispose();
         return;
       }
       await idle.setLooping(true);
       await idle.setVolume(0);
+      if (!mounted || _disposed) {
+        await idle.dispose();
+        return;
+      }
       await idle.play();
-      if (!mounted) {
+      if (!mounted || _disposed) {
         await idle.dispose();
         return;
       }
@@ -59,7 +64,12 @@ class _LearnScreenState extends State<LearnScreen> {
 
   @override
   void dispose() {
-    _idleVideo?.dispose();
+    _disposed = true;
+    final video = _idleVideo;
+    _idleVideo = null;
+    _idleReady = false;
+    video?.pause();
+    video?.dispose();
     super.dispose();
   }
 
@@ -126,13 +136,11 @@ class _LearnScreenState extends State<LearnScreen> {
                 leading: TtBackButton(onPressed: () => context.pop()),
               ),
               const SizedBox(height: 8),
-              Text(
-                'Learn with Bao!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
-              ),
-              Text(
-                'Pick something new to explore',
-                style: TTTypography.subtitle(),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: RotatingHeadline(
+                  phrases: LearnHeadlinePhrases.all,
+                ),
               ),
               const Spacer(),
               ItemTrayBar(
@@ -166,11 +174,12 @@ class _LearnVideoLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!ready || controller == null || !controller!.value.isInitialized) {
+    final c = controller;
+    if (!ready || c == null || !c.value.isInitialized) {
       return const SizedBox.expand();
     }
 
-    final size = controller!.value.size;
+    final size = c.value.size;
     return SizedBox.expand(
       child: FittedBox(
         fit: BoxFit.cover,
@@ -179,8 +188,8 @@ class _LearnVideoLayer extends StatelessWidget {
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
           child: VideoPlayer(
-            key: ValueKey(controller),
-            controller!,
+            key: ValueKey(c),
+            c,
           ),
         ),
       ),

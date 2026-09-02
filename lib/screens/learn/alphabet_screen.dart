@@ -29,6 +29,7 @@ class _AlphabetScreenState extends State<AlphabetScreen>
   int _index = 0;
   bool _celebrating = false;
   bool _advancing = false;
+  bool _disposed = false;
 
   VideoPlayerController? _video;
   bool _ready = false;
@@ -44,6 +45,14 @@ class _AlphabetScreenState extends State<AlphabetScreen>
     unawaited(_loadSegment(0));
   }
 
+  Future<void> _disposeController(VideoPlayerController? controller) async {
+    if (controller == null) return;
+    try {
+      controller.pause();
+    } catch (_) {}
+    await controller.dispose();
+  }
+
   Future<void> _loadSegment(int index) async {
     final prev = _video;
     final prevListener = _listener;
@@ -52,26 +61,51 @@ class _AlphabetScreenState extends State<AlphabetScreen>
     }
     _listener = null;
 
-    setState(() {
+    // Detach previous controller from the tree before disposing it.
+    if (mounted && !_disposed) {
+      setState(() {
+        _ready = false;
+        _video = null;
+        _index = index;
+        _advancing = false;
+      });
+    } else {
       _ready = false;
+      _video = null;
       _index = index;
       _advancing = false;
-    });
+    }
+
+    await _disposeController(prev);
+    if (_disposed || !mounted) return;
 
     final next = VideoPlayerController.asset(AlphabetVideos.segments[index]);
     try {
       await next.initialize();
-      if (!mounted) {
-        await next.dispose();
+      if (!mounted || _disposed) {
+        await _disposeController(next);
         return;
       }
       await next.setLooping(false);
       await next.setVolume(0);
+      if (!mounted || _disposed) {
+        await _disposeController(next);
+        return;
+      }
       await next.play();
+      if (!mounted || _disposed) {
+        await _disposeController(next);
+        return;
+      }
 
       _listener = () {
         final v = _video;
-        if (v == null || _celebrating || _advancing || !v.value.isInitialized) {
+        if (v == null ||
+            !identical(v, next) ||
+            _celebrating ||
+            _advancing ||
+            _disposed ||
+            !v.value.isInitialized) {
           return;
         }
         final duration = v.value.duration;
@@ -88,15 +122,13 @@ class _AlphabetScreenState extends State<AlphabetScreen>
         _video = next;
         _ready = true;
       });
-      await prev?.dispose();
     } catch (_) {
-      await next.dispose();
-      await prev?.dispose();
+      await _disposeController(next);
     }
   }
 
   Future<void> _advance() async {
-    if (_celebrating || _advancing) return;
+    if (_celebrating || _advancing || _disposed) return;
     _advancing = true;
 
     if (_index >= AlphabetVideos.segments.length - 1) {
@@ -107,14 +139,14 @@ class _AlphabetScreenState extends State<AlphabetScreen>
   }
 
   Future<void> _finish() async {
-    if (_celebrating) return;
+    if (_celebrating || _disposed) return;
     setState(() => _celebrating = true);
 
     final reward = LearnAlphabetRules.rewardForComplete();
     await Future<void>.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
+    if (!mounted || _disposed) return;
     await _showReward(reward);
-    if (!mounted) return;
+    if (!mounted || _disposed) return;
     context.pop(true);
   }
 
@@ -147,12 +179,18 @@ class _AlphabetScreenState extends State<AlphabetScreen>
 
   @override
   void dispose() {
+    _disposed = true;
     final listener = _listener;
+    final video = _video;
+    _listener = null;
+    _video = null;
+    _ready = false;
     if (listener != null) {
-      _video?.removeListener(listener);
+      video?.removeListener(listener);
     }
     _float.dispose();
-    _video?.dispose();
+    video?.pause();
+    video?.dispose();
     super.dispose();
   }
 
