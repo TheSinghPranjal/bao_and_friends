@@ -114,6 +114,14 @@ flutter:
     - assets/videos/chore/wash_face/bao_washing_face.mp4
     - assets/videos/chore/bath/bao_not_taking_a_bath_video.mp4
     - assets/videos/chore/bath/bao_taking_a_bath_video.mp4
+    - assets/videos/chore/getting_dressed/bao_not_getting_dressed.mp4
+    - assets/videos/chore/getting_dressed/bao_getting_dressed.mp4
+    - assets/videos/chore/getting_dressed/bao_getting_dressed_not_wearing_tie.mp4
+    - assets/videos/chore/getting_dressed/bao_getting_dressed_wearing_tie.mp4
+    - assets/videos/chore/wear_shoe/bao_not_wearing_shoe.mp4
+    - assets/videos/chore/wear_shoe/bao_wearing_shoe_video.mp4
+    - assets/videos/chore/wear_shoe/bao_has_worn_shoe_loop_video.mp4
+    - assets/videos/chore/wear_shoe/bao_taking_bag_after_wearing_shoe.mp4
     - assets/videos/chore/comb_hair/bao_not_coming_hair.mp4
     - assets/videos/chore/comb_hair/bao_combing_hair.mp4
     - assets/videos/play/play_screen_video.mp4

@@ -82,6 +82,14 @@ abstract final class TTColors {
   static const bathSoft = Color(0xFFB2EBF2);
   static const bathWarm = Color(0xFF4DD0E1);
   static const bathDeep = Color(0xFF00838F);
+  static const dressCream = Color(0xFFFCE4EC);
+  static const dressSoft = Color(0xFFF8BBD0);
+  static const dressWarm = Color(0xFFF48FB1);
+  static const dressDeep = Color(0xFFC2185B);
+  static const shoeCream = Color(0xFFE8F5E9);
+  static const shoeSoft = Color(0xFFC8E6C9);
+  static const shoeWarm = Color(0xFFA5D6A7);
+  static const shoeDeep = Color(0xFF388E3C);
   static const combCream = Color(0xFFFFF8E1);
   static const combSoft = Color(0xFFFFE0B2);
   static const combWarm = Color(0xFFFFCC80);

@@ -330,12 +330,11 @@ class _PlayGameScreenState extends State<PlayGameScreen>
                       builder: (context, constraints) {
                         final bob = math.sin(_float.value * math.pi * 2) * 12;
                         final x = constraints.maxWidth / 2 - bubbleSize / 2;
-                        final y = constraints.maxHeight * 0.28 + bob;
                         return Stack(
                           children: [
                             Positioned(
                               left: x,
-                              top: y,
+                              bottom: 48 + bob,
                               child: BounceButton(
                                 onPressed:
                                     _actionInProgress ? null : _tapBubble,

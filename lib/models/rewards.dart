@@ -371,6 +371,54 @@ abstract final class BathRules {
   }
 }
 
+/// Get Dressed — clothes then tie (2 steps).
+abstract final class GetDressedRules {
+  static const int maxSteps = 2;
+  static const int stepsForFullReward = 2;
+  static const Duration reminderInterval = Duration(hours: 12);
+
+  static RewardResult rewardForSteps(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Help Bao get dressed!');
+    }
+    if (completed >= stepsForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao is ready for the day!',
+      );
+    }
+    return const RewardResult(
+      stars: 1,
+      message: 'Clothes on! Now add the tie!',
+    );
+  }
+}
+
+/// Wear Shoes — shoes then bag (2 steps).
+abstract final class WearShoesRules {
+  static const int maxSteps = 2;
+  static const int stepsForFullReward = 2;
+  static const Duration reminderInterval = Duration(hours: 12);
+
+  static RewardResult rewardForSteps(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Help Bao put on shoes!');
+    }
+    if (completed >= stepsForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao is ready to go!',
+      );
+    }
+    return const RewardResult(
+      stars: 1,
+      message: 'Shoes on! Now grab the bag!',
+    );
+  }
+}
+
 /// Brush Teeth reward math (same loop as Make Bed; reached from Chores).
 abstract final class BrushTeethRules {
   static const int maxSteps = 4;
@@ -442,6 +490,7 @@ abstract final class ChoreTimers {
   static const Duration makeBed = Duration(hours: 8);
   static const Duration washFace = Duration(hours: 8);
   static const Duration bath = Duration(hours: 6);
+  static const Duration getDressed = Duration(hours: 12);
   static const Duration combHair = Duration(hours: 8);
   static const Duration wearShoes = Duration(hours: 24);
 }

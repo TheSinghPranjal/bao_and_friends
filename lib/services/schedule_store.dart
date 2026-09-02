@@ -173,6 +173,8 @@ class ScheduleStore {
       ActivityId.brushTeeth,
       ActivityId.washFace,
       ActivityId.bath,
+      ActivityId.getDressed,
+      ActivityId.wearShoes,
     ];
     ActivityTimerStatus? worst;
     for (final id in ids) {

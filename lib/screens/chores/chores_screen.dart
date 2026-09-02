@@ -114,6 +114,16 @@ class _ChoresScreenState extends State<ChoresScreen> {
       final completed = await context.push<bool>('/comb-hair');
       if (!mounted || completed != true) return;
       setState(() => _done.add(index));
+    } else if (index == 5) {
+      final completed = await context.push<bool>('/get-dressed');
+      if (!mounted || completed != true) return;
+      setState(() => _done.add(index));
+      await ScheduleStore.markCompleted(ActivityId.getDressed);
+    } else if (index == 6) {
+      final completed = await context.push<bool>('/wear-shoes');
+      if (!mounted || completed != true) return;
+      setState(() => _done.add(index));
+      await ScheduleStore.markCompleted(ActivityId.wearShoes);
     } else {
       setState(() => _done.add(index));
     }
