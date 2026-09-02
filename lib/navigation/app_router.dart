@@ -6,9 +6,11 @@ import '../screens/chores/chores_screen.dart';
 import '../screens/chores/bath_screen.dart';
 import '../screens/chores/brush_teeth_screen.dart';
 import '../screens/chores/comb_hair_screen.dart';
+import '../screens/chores/get_dressed_screen.dart';
 import '../screens/chores/make_bed_screen.dart';
 import '../screens/chores/wash_face_screen.dart';
 import '../screens/chores/wake_up_screen.dart';
+import '../screens/chores/wear_shoes_screen.dart';
 import '../screens/drink/drink_water_screen.dart';
 import '../screens/feed/drink_milk_screen.dart';
 import '../screens/feed/eat_apple_screen.dart';
@@ -104,6 +106,14 @@ GoRouter createAppRouter({bool skipSplash = false}) {
       GoRoute(
         path: '/bath',
         builder: (context, state) => const BathScreen(),
+      ),
+      GoRoute(
+        path: '/get-dressed',
+        builder: (context, state) => const GetDressedScreen(),
+      ),
+      GoRoute(
+        path: '/wear-shoes',
+        builder: (context, state) => const WearShoesScreen(),
       ),
       GoRoute(
         path: '/comb-hair',

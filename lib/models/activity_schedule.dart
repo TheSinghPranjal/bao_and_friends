@@ -10,6 +10,8 @@ enum ActivityId {
   brushTeeth,
   washFace,
   bath,
+  getDressed,
+  wearShoes,
   learn,
 }
 
@@ -25,6 +27,8 @@ extension ActivityIdX on ActivityId {
         ActivityId.brushTeeth => 'Brush Teeth',
         ActivityId.washFace => 'Wash Face',
         ActivityId.bath => 'Bath',
+        ActivityId.getDressed => 'Get Dressed',
+        ActivityId.wearShoes => 'Wear Shoes',
         ActivityId.learn => 'Learn',
       };
 
@@ -36,7 +40,9 @@ extension ActivityIdX on ActivityId {
         ActivityId.makeBed ||
         ActivityId.brushTeeth ||
         ActivityId.washFace ||
-        ActivityId.bath =>
+        ActivityId.bath ||
+        ActivityId.getDressed ||
+        ActivityId.wearShoes =>
           'Chores',
         ActivityId.learn => 'Learn',
       };
@@ -50,7 +56,9 @@ extension ActivityIdX on ActivityId {
         ActivityId.makeBed ||
         ActivityId.brushTeeth ||
         ActivityId.washFace ||
-        ActivityId.bath =>
+        ActivityId.bath ||
+        ActivityId.getDressed ||
+        ActivityId.wearShoes =>
           '/chores',
         ActivityId.learn => '/learn',
       };
@@ -64,6 +72,8 @@ extension ActivityIdX on ActivityId {
         ActivityId.brushTeeth => Icons.brush_rounded,
         ActivityId.washFace => Icons.soap_rounded,
         ActivityId.bath => Icons.bathtub_rounded,
+        ActivityId.getDressed => Icons.checkroom_rounded,
+        ActivityId.wearShoes => Icons.snowshoeing_rounded,
         ActivityId.learn => Icons.menu_book_rounded,
       };
 
@@ -76,6 +86,8 @@ extension ActivityIdX on ActivityId {
         ActivityId.brushTeeth => const Color(0xFF00ACC1),
         ActivityId.washFace => const Color(0xFF1E88E5),
         ActivityId.bath => const Color(0xFF00838F),
+        ActivityId.getDressed => const Color(0xFFC2185B),
+        ActivityId.wearShoes => const Color(0xFF388E3C),
         ActivityId.learn => const Color(0xFF7EC8E8),
       };
 }
@@ -121,6 +133,12 @@ abstract final class DefaultSchedules {
   /// Bath: 7:15am, 6:15pm
   static const bath = <MinuteOfDay>[7 * 60 + 15, 18 * 60 + 15];
 
+  /// Get dressed: 7:30am (school morning)
+  static const getDressed = <MinuteOfDay>[7 * 60 + 30];
+
+  /// Wear shoes: 7:45am
+  static const wearShoes = <MinuteOfDay>[7 * 60 + 45];
+
   /// Night sleep start / end and noon nap start (wake uses these).
   static const nightSleepStart = 22 * 60; // 10pm
   static const nightSleepEnd = 6 * 60; // 6am
@@ -141,6 +159,8 @@ abstract final class DefaultSchedules {
         ActivityId.brushTeeth => List.of(brushTeeth),
         ActivityId.washFace => List.of(washFace),
         ActivityId.bath => List.of(bath),
+        ActivityId.getDressed => List.of(getDressed),
+        ActivityId.wearShoes => List.of(wearShoes),
         ActivityId.wake => [
             nightSleepStart,
             nightSleepEnd,
@@ -159,6 +179,8 @@ abstract final class DefaultSchedules {
     ActivityId.brushTeeth,
     ActivityId.washFace,
     ActivityId.bath,
+    ActivityId.getDressed,
+    ActivityId.wearShoes,
   ];
 }
 
