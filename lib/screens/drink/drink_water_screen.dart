@@ -498,61 +498,305 @@ class RewardPopup extends StatelessWidget {
   final RewardResult reward;
   final VoidCallback onContinue;
 
+  static const _cardCream = Color(0xFFFFF8F0);
+  static const _cardBorder = Color(0xFFE8D5B5);
+  static const _titleBrown = Color(0xFF4E342E);
+  static const _bodyBrown = Color(0xFF6D4C41);
+  static const _captionBrown = Color(0xFFA1887F);
+  static const _starPillFill = Color(0xFFFFF3C4);
+  static const _starPillBorder = Color(0xFFE8B820);
+  static const _btnTop = Color(0xFFFFE066);
+  static const _btnBottom = Color(0xFFF5C542);
+  static const _btnShadow = Color(0xFFE0A800);
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 300,
-      margin: const EdgeInsets.all(24),
-      padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-      decoration: BoxDecoration(
-        color: TTColors.creamWhite,
-        borderRadius: BorderRadius.circular(TTSpacing.radiusXl),
-        boxShadow: TTShadows.lift,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('Wonderful!', style: TTTypography.headline()),
-          const SizedBox(height: 8),
-          Text(
-            reward.message,
-            textAlign: TextAlign.center,
-            style: TTTypography.body(),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (reward.stars > 0) ...[
-                const Icon(Icons.star_rounded, color: TTColors.golden, size: 36),
-                Text(
-                  '+${reward.stars}',
-                  style: TTTypography.title(),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Stars burst – placeholder',
-            style: TTTypography.caption(),
-          ),
-          const SizedBox(height: 20),
-          BounceButton(
-            onPressed: onContinue,
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 160, minHeight: 56),
-              alignment: Alignment.center,
+    final stars = reward.stars > 0 ? reward.stars : 1;
+
+    return Material(
+      color: Colors.transparent,
+      child: SizedBox(
+        width: 320,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.topCenter,
+          children: [
+            // Card
+            Container(
+              width: 320,
+              margin: const EdgeInsets.only(top: 72),
+              padding: const EdgeInsets.fromLTRB(22, 78, 22, 22),
               decoration: BoxDecoration(
-                color: TTColors.golden,
-                borderRadius: BorderRadius.circular(TTSpacing.radiusPill),
+                color: _cardCream,
+                borderRadius: BorderRadius.circular(44),
+                border: Border.all(color: _cardBorder, width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 28,
+                    offset: const Offset(0, 14),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: Text('Yay!', style: TTTypography.button()),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Confetti / sparkles
+                  ..._confettiDots(),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Wonderful!',
+                        style: TTTypography.headline(color: _titleBrown)
+                            .copyWith(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 32,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        reward.message,
+                        textAlign: TextAlign.center,
+                        style: TTTypography.body(color: _bodyBrown).copyWith(
+                          fontSize: 16,
+                          height: 1.35,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      // Stars reward pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _starPillFill,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: _starPillBorder,
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _starPillBorder.withValues(alpha: 0.22),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              color: Color(0xFFFFC107),
+                              size: 40,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '+$stars',
+                              style: TTTypography.title(color: _titleBrown)
+                                  .copyWith(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 28,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Stars burst – you shine bright!',
+                        textAlign: TextAlign.center,
+                        style: TTTypography.caption(color: _captionBrown)
+                            .copyWith(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // 3D Yay button
+                      BounceButton(
+                        onPressed: onContinue,
+                        semanticLabel: 'Yay',
+                        child: Container(
+                          width: double.infinity,
+                          constraints: const BoxConstraints(minHeight: 58),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [_btnTop, _btnBottom],
+                            ),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.55),
+                              width: 1.5,
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: _btnShadow,
+                                offset: Offset(0, 6),
+                                blurRadius: 0,
+                                spreadRadius: 0,
+                              ),
+                              BoxShadow(
+                                color: Color(0x55C48A00),
+                                offset: Offset(0, 10),
+                                blurRadius: 14,
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            'Yay!',
+                            style: TTTypography.button(color: _titleBrown)
+                                .copyWith(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // Bao + glow sitting on top of the card
+            Positioned(
+              top: 0,
+              child: SizedBox(
+                width: 200,
+                height: 150,
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Soft golden glow / sunburst
+                    Container(
+                      width: 160,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            const Color(0xFFFFF59D).withValues(alpha: 0.95),
+                            const Color(0xFFFFE082).withValues(alpha: 0.55),
+                            const Color(0xFFFFE082).withValues(alpha: 0.0),
+                          ],
+                          stops: const [0.0, 0.45, 1.0],
+                        ),
+                      ),
+                    ),
+                    // Tiny floating stars around Bao
+                    const Positioned(
+                      left: 8,
+                      top: 28,
+                      child: Icon(
+                        Icons.star_rounded,
+                        color: Color(0xFFFFD54F),
+                        size: 18,
+                      ),
+                    ),
+                    const Positioned(
+                      right: 10,
+                      top: 18,
+                      child: Icon(
+                        Icons.star_rounded,
+                        color: Color(0xFFFFC107),
+                        size: 22,
+                      ),
+                    ),
+                    const Positioned(
+                      right: 28,
+                      top: 52,
+                      child: Icon(
+                        Icons.star_rounded,
+                        color: Color(0xFFFFE082),
+                        size: 14,
+                      ),
+                    ),
+                    const Positioned(
+                      left: 24,
+                      top: 56,
+                      child: Icon(
+                        Icons.star_rounded,
+                        color: Color(0xFFFFCA28),
+                        size: 12,
+                      ),
+                    ),
+                    // Bao character
+                    Image.asset(
+                      'assets/images/bao_reward_celebrate.png',
+                      width: 168,
+                      height: 140,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  List<Widget> _confettiDots() {
+    const pieces = <(double, double, Color, double)>[
+      (12, 18, Color(0xFFF48FB1), 7),
+      (48, 8, Color(0xFF90CAF9), 6),
+      (270, 22, Color(0xFFFFF176), 7),
+      (250, 70, Color(0xFFF48FB1), 5),
+      (20, 110, Color(0xFF80DEEA), 6),
+      (275, 130, Color(0xFFFFCC80), 6),
+      (40, 200, Color(0xFFCE93D8), 5),
+      (260, 195, Color(0xFF90CAF9), 5),
+    ];
+    return [
+      for (final p in pieces)
+        Positioned(
+          left: p.$1,
+          top: p.$2,
+          child: Transform.rotate(
+            angle: (p.$1 + p.$2) % 40 / 20,
+            child: Container(
+              width: p.$4,
+              height: p.$4 * 0.55,
+              decoration: BoxDecoration(
+                color: p.$3,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        ),
+      const Positioned(
+        left: 30,
+        top: 55,
+        child: Icon(Icons.star_rounded, color: Color(0xFFFFD54F), size: 12),
+      ),
+      const Positioned(
+        right: 36,
+        top: 48,
+        child: Icon(Icons.star_rounded, color: Color(0xFFFFCA28), size: 10),
+      ),
+      const Positioned(
+        left: 55,
+        bottom: 90,
+        child: Icon(Icons.star_rounded, color: Color(0xFFFFE082), size: 11),
+      ),
+    ];
   }
 }
 
