@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/activity_schedule.dart';
+import '../models/rewards.dart';
 import 'play_due_store.dart';
 
 /// Persists custom schedule times + last completion per [ActivityId].
@@ -11,8 +12,20 @@ class ScheduleStore {
 
   static const _timesPrefix = 'schedule_times_';
   static const _donePrefix = 'schedule_done_';
+  static const _countPrefix = 'schedule_count_';
+
+  /// Stars for clearing one due slot.
+  static const starsDue = ChoreDueTapRules.starsDue;
+
+  /// Stars for a voluntary chore when nothing is due.
+  static const starsBonus = ChoreDueTapRules.starsBonus;
 
   static Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
+
+  static String _dayKey(DateTime t) =>
+      '${t.year.toString().padLeft(4, '0')}'
+      '${t.month.toString().padLeft(2, '0')}'
+      '${t.day.toString().padLeft(2, '0')}';
 
   // ---- Custom times ----
 
@@ -78,14 +91,61 @@ class ScheduleStore {
     );
   }
 
+  /// How many times [id] was completed today (resets automatically by day key).
+  static Future<int> completionsToday(ActivityId id, [DateTime? now]) async {
+    final t = now ?? DateTime.now();
+    final prefs = await _prefs;
+    return prefs.getInt('$_countPrefix${id.prefsKey}_${_dayKey(t)}') ?? 0;
+  }
+
+  static Future<void> _setCompletionsToday(
+    ActivityId id,
+    int count, [
+    DateTime? now,
+  ]) async {
+    final t = now ?? DateTime.now();
+    final prefs = await _prefs;
+    await prefs.setInt(
+      '$_countPrefix${id.prefsKey}_${_dayKey(t)}',
+      count.clamp(0, 99),
+    );
+  }
+
+  /// Slots whose clock time has already passed today.
+  static Future<int> passedSlotsToday(ActivityId id, [DateTime? now]) async {
+    final t = now ?? DateTime.now();
+    final minutes = t.hour * 60 + t.minute;
+    final slots = await timesFor(id);
+    return slots.where((s) => s <= minutes).length;
+  }
+
+  /// Chores that track due via daily completion count (slot passes − done today).
+  static bool usesCompletionCountDue(ActivityId id) => switch (id) {
+        ActivityId.makeBed ||
+        ActivityId.brushTeeth ||
+        ActivityId.washFace ||
+        ActivityId.bath ||
+        ActivityId.combHair =>
+          true,
+        _ => false,
+      };
+
   /// Missed / still-due slots today for [id] (Play-style badge number).
   ///
-  /// A past slot counts as due until a completion today at/after that slot.
+  /// Completion-count chores (make bed / brush / wash / bath / comb) use
+  /// passed slots − completions today. Other chores use last-completion
+  /// timestamp vs each past slot.
   static Future<int> dueCount(ActivityId id, [DateTime? now]) async {
     if (id == ActivityId.learn || id == ActivityId.wake) return 0;
     final t = now ?? DateTime.now();
     final slots = await timesFor(id);
     if (slots.isEmpty) return 0;
+
+    if (usesCompletionCountDue(id)) {
+      final passed = await passedSlotsToday(id, t);
+      final done = await completionsToday(id, t);
+      return (passed - done).clamp(0, 99);
+    }
 
     final minutes = t.hour * 60 + t.minute;
     final done = await lastCompleted(id);
@@ -93,8 +153,7 @@ class ScheduleStore {
         done.year == t.year &&
         done.month == t.month &&
         done.day == t.day;
-    final doneMinute =
-        doneToday ? done.hour * 60 + done.minute : -1;
+    final doneMinute = doneToday ? done.hour * 60 + done.minute : -1;
 
     var due = 0;
     for (final s in slots) {
@@ -103,6 +162,34 @@ class ScheduleStore {
     }
     return due.clamp(0, 99);
   }
+
+  /// Completes one chore tap (anytime). Clears a due if any; returns stars.
+  static Future<({int remainingDue, bool wasDue, int stars})> completeOneDue(
+    ActivityId id, [
+    DateTime? now,
+  ]) async {
+    assert(usesCompletionCountDue(id));
+    final t = now ?? DateTime.now();
+    final dueBefore = await dueCount(id, t);
+    final wasDue = dueBefore > 0;
+    if (wasDue) {
+      final done = await completionsToday(id, t);
+      await _setCompletionsToday(id, done + 1, t);
+    }
+    await markCompleted(id, t);
+    final remaining = await dueCount(id, t);
+    return (
+      remainingDue: remaining,
+      wasDue: wasDue,
+      stars: wasDue ? starsDue : starsBonus,
+    );
+  }
+
+  /// Clears one Make Bed due slot for today. Returns remaining due + stars.
+  static Future<({int remainingDue, bool wasDue, int stars})> completeOneMakeBed([
+    DateTime? now,
+  ]) =>
+      completeOneDue(ActivityId.makeBed, now);
 
   // ---- Window / due math ----
 
@@ -170,14 +257,8 @@ class ScheduleStore {
       );
     }
 
-    final done = await lastCompleted(id);
-    // Only completions at/after today's window count; yesterday does not carry over.
-    final sameDayDone = done != null &&
-        done.year == t.year &&
-        done.month == t.month &&
-        done.day == t.day &&
-        !done.isBefore(window);
-    final isDue = !sameDayDone;
+    final due = await dueCount(id, t);
+    final isDue = due > 0;
 
     final span = next.difference(window).inSeconds.clamp(1, 48 * 3600);
     final remaining = next.difference(t).inSeconds.clamp(0, span);
@@ -199,6 +280,7 @@ class ScheduleStore {
       ActivityId.brushTeeth,
       ActivityId.washFace,
       ActivityId.bath,
+      ActivityId.combHair,
       ActivityId.getDressed,
       ActivityId.wearShoes,
     ];

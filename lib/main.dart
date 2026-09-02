@@ -7,10 +7,13 @@ import 'firebase_options.dart';
 import 'navigation/app_router.dart';
 import 'screens/system/force_update_screen.dart';
 import 'services/force_update_service.dart';
+import 'services/stars_store.dart';
 import 'theme/tt_typography.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Warm shared star total so every status bar starts in sync.
+  await StarsStore.total();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,

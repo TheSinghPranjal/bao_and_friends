@@ -8,6 +8,7 @@ import '../../models/activity_schedule.dart';
 import '../../models/character_bg_videos.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
+import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -44,8 +45,6 @@ class _ChoresScreenState extends State<ChoresScreen> {
     _ChoreItem('Comb Hair', Icons.content_cut_rounded, Color(0xFFFFCC80)),
     _ChoreItem('Get Dressed', Icons.checkroom_rounded, Color(0xFFF48FB1)),
     _ChoreItem('Wear Shoes', Icons.snowshoeing_rounded, Color(0xFFA5D6A7)),
-    _ChoreItem('Breakfast', Icons.free_breakfast_rounded, Color(0xFFFFE082)),
-    _ChoreItem('Pack Bag', Icons.backpack_rounded, Color(0xFFCE93D8)),
     _ChoreItem('School', Icons.school_rounded, Color(0xFF81C784)),
   ];
 
@@ -55,12 +54,10 @@ class _ChoresScreenState extends State<ChoresScreen> {
     ActivityId.brushTeeth,
     ActivityId.washFace,
     ActivityId.bath,
-    null, // comb hair
+    ActivityId.combHair,
     ActivityId.getDressed,
     ActivityId.wearShoes,
-    null,
-    null,
-    null,
+    null, // school
   ];
 
   final Set<int> _done = {};
@@ -84,7 +81,9 @@ class _ChoresScreenState extends State<ChoresScreen> {
       dues[i] = id == null ? 0 : await ScheduleStore.dueCount(id);
     }
     if (!mounted) return;
-    setState(() => _dueByIndex = dues);
+    setState(() {
+      _dueByIndex = dues;
+    });
   }
 
   Future<void> _initVideo() async {
@@ -114,43 +113,58 @@ class _ChoresScreenState extends State<ChoresScreen> {
   }
 
   Future<void> _tapChore(int index) async {
-    if (_celebrating || _done.contains(index)) return;
+    if (_celebrating) return;
+    // Allow anytime — due-count chores can be reopened for more dues / bonus taps.
 
     if (index == 0) {
       final completed = await context.push<bool>('/make-bed');
-      if (!mounted || completed != true) return;
+      if (!mounted || completed != true) {
+        await _refreshDues();
+        return;
+      }
       setState(() => _done.add(index));
-      await ScheduleStore.markCompleted(ActivityId.makeBed);
     } else if (index == 1) {
       final completed = await context.push<bool>('/brush-teeth');
-      if (!mounted || completed != true) return;
+      if (!mounted || completed != true) {
+        await _refreshDues();
+        return;
+      }
       setState(() => _done.add(index));
-      await ScheduleStore.markCompleted(ActivityId.brushTeeth);
     } else if (index == 2) {
       final completed = await context.push<bool>('/wash-face');
-      if (!mounted || completed != true) return;
+      if (!mounted || completed != true) {
+        await _refreshDues();
+        return;
+      }
       setState(() => _done.add(index));
-      await ScheduleStore.markCompleted(ActivityId.washFace);
     } else if (index == 3) {
       final completed = await context.push<bool>('/bath');
-      if (!mounted || completed != true) return;
+      if (!mounted || completed != true) {
+        await _refreshDues();
+        return;
+      }
       setState(() => _done.add(index));
-      await ScheduleStore.markCompleted(ActivityId.bath);
     } else if (index == 4) {
       final completed = await context.push<bool>('/comb-hair');
-      if (!mounted || completed != true) return;
+      if (!mounted || completed != true) {
+        await _refreshDues();
+        return;
+      }
       setState(() => _done.add(index));
     } else if (index == 5) {
+      if (_done.contains(index)) return;
       final completed = await context.push<bool>('/get-dressed');
       if (!mounted || completed != true) return;
       setState(() => _done.add(index));
       await ScheduleStore.markCompleted(ActivityId.getDressed);
     } else if (index == 6) {
+      if (_done.contains(index)) return;
       final completed = await context.push<bool>('/wear-shoes');
       if (!mounted || completed != true) return;
       setState(() => _done.add(index));
       await ScheduleStore.markCompleted(ActivityId.wearShoes);
     } else {
+      if (_done.contains(index)) return;
       setState(() => _done.add(index));
     }
 
@@ -161,6 +175,7 @@ class _ChoresScreenState extends State<ChoresScreen> {
       final reward = ChoresRules.rewardForChores(_done.length);
       await Future<void>.delayed(const Duration(milliseconds: 600));
       if (!mounted) return;
+      await StarsStore.add(reward.stars);
       await _showReward(reward);
       if (!mounted) return;
       context.pop();
@@ -239,7 +254,6 @@ class _ChoresScreenState extends State<ChoresScreen> {
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: 12 + (_done.isEmpty ? 0 : 1),
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop()),
               ),

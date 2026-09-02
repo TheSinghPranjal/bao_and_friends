@@ -5,9 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/activity_schedule.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
-import '../../models/activity_schedule.dart';
+import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -16,8 +17,8 @@ import '../../widgets/due_count_badge.dart';
 import '../../widgets/status_bar.dart';
 import '../drink/drink_water_screen.dart' show RewardPopup;
 
-/// Brush Teeth Activity (under Chores) — tap floating toothbrush bubbles (max 4).
-/// 1 tap → 1 star. All 4 → 3 stars + 1 Magic Bean.
+/// Brush Teeth — one bottom bubble with a due badge (up to 4× / day).
+/// Tap anytime: due = 10★, else 5★.
 class BrushTeethScreen extends StatefulWidget {
   const BrushTeethScreen({super.key});
 
@@ -32,13 +33,15 @@ class _BrushTeethScreenState extends State<BrushTeethScreen>
   static const _brushingVideoAsset =
       'assets/videos/chore/brush/bao_brushing_teeth.mp4';
   static const _crossfadeDuration = Duration(milliseconds: 550);
+  static const _bubbleSize = 96.0;
 
   late final AnimationController _float;
   late final AnimationController _crossfade;
-  final Set<int> _done = {};
   bool _celebrating = false;
   bool _actionInProgress = false;
   int _dueCount = 0;
+  int _clearedThisSession = 0;
+  Completer<void>? _actionDone;
 
   VideoPlayerController? _idleVideo;
   VideoPlayerController? _brushingVideo;
@@ -90,8 +93,8 @@ class _BrushTeethScreenState extends State<BrushTeethScreen>
         if (v == null || !_actionInProgress || !v.value.isInitialized) return;
         final duration = v.value.duration;
         if (duration <= Duration.zero) return;
-        final nearEnd = v.value.position >=
-            duration - const Duration(milliseconds: 80);
+        final nearEnd =
+            v.value.position >= duration - const Duration(milliseconds: 80);
         if (nearEnd && !v.value.isPlaying) {
           unawaited(_finishAction());
         }
@@ -114,6 +117,7 @@ class _BrushTeethScreenState extends State<BrushTeethScreen>
     final brushing = _brushingVideo;
     if (brushing == null || !_brushingReady || _actionInProgress) return;
 
+    _actionDone = Completer<void>();
     setState(() => _actionInProgress = true);
 
     await brushing.seekTo(Duration.zero);
@@ -121,6 +125,10 @@ class _BrushTeethScreenState extends State<BrushTeethScreen>
     if (!mounted) return;
 
     await _crossfade.forward();
+    await _actionDone?.future.timeout(
+      const Duration(seconds: 8),
+      onTimeout: () {},
+    );
   }
 
   Future<void> _finishAction() async {
@@ -132,6 +140,9 @@ class _BrushTeethScreenState extends State<BrushTeethScreen>
         await brushing.setLooping(true);
         await brushing.seekTo(Duration.zero);
         await brushing.play();
+      }
+      if (_actionDone != null && !_actionDone!.isCompleted) {
+        _actionDone!.complete();
       }
       return;
     }
@@ -148,6 +159,9 @@ class _BrushTeethScreenState extends State<BrushTeethScreen>
     await _crossfade.reverse();
     if (!mounted) return;
     setState(() => _actionInProgress = false);
+    if (_actionDone != null && !_actionDone!.isCompleted) {
+      _actionDone!.complete();
+    }
   }
 
   @override
@@ -163,20 +177,32 @@ class _BrushTeethScreenState extends State<BrushTeethScreen>
     super.dispose();
   }
 
-  Future<void> _tapBubble(int index) async {
-    if (_celebrating || _done.contains(index) || _actionInProgress) return;
-    setState(() => _done.add(index));
-    unawaited(_playBrushingAnimation());
+  Future<void> _tapBubble() async {
+    if (_celebrating || _actionInProgress) return;
 
-    if (_done.length >= BrushTeethRules.stepsForFullReward) {
-      setState(() => _celebrating = true);
-      final reward = BrushTeethRules.rewardForSteps(_done.length);
-      await Future<void>.delayed(const Duration(milliseconds: 900));
-      if (!mounted) return;
-      await _showReward(reward);
-      if (!mounted) return;
-      context.pop(true);
-    }
+    await _playBrushingAnimation();
+    if (!mounted) return;
+
+    final result =
+        await ScheduleStore.completeOneDue(ActivityId.brushTeeth);
+    await StarsStore.add(result.stars);
+    if (!mounted) return;
+
+    setState(() {
+      _dueCount = result.remainingDue;
+      if (result.wasDue) _clearedThisSession++;
+      _celebrating = true;
+    });
+
+    final reward = ChoreDueTapRules.rewardForTap(
+      wasDue: result.wasDue,
+      choreLabel: 'brush teeth',
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 280));
+    if (!mounted) return;
+    await _showReward(reward);
+    if (!mounted) return;
+    context.pop(true);
   }
 
   Future<void> _showReward(RewardResult reward) {
@@ -206,11 +232,16 @@ class _BrushTeethScreenState extends State<BrushTeethScreen>
     );
   }
 
+  String get _subtitle {
+    if (_celebrating) return 'Nice brushing!';
+    if (_dueCount > 0) {
+      return 'Due ×$_dueCount — tap for ${ChoreDueTapRules.starsDue}★';
+    }
+    return 'Tap anytime for ${ChoreDueTapRules.starsBonus}★';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final remaining = BrushTeethRules.maxSteps - _done.length;
-    const bubbleSize = 84.0;
-
     return Scaffold(
       backgroundColor: TTColors.teethCream,
       body: Stack(
@@ -229,10 +260,7 @@ class _BrushTeethScreenState extends State<BrushTeethScreen>
               ),
             ),
           ),
-          _TeethVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
+          _TeethVideoLayer(controller: _idleVideo, ready: _idleReady),
           AnimatedBuilder(
             animation: _crossfade,
             builder: (context, child) {
@@ -265,7 +293,6 @@ class _BrushTeethScreenState extends State<BrushTeethScreen>
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: 12 + (_done.isEmpty ? 0 : 1),
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop(false)),
               ),
@@ -274,48 +301,37 @@ class _BrushTeethScreenState extends State<BrushTeethScreen>
                 'Brush Teeth!',
                 style: TTTypography.headline(color: TTColors.darkBrown),
               ),
-              Text(
-                remaining == 0
-                    ? 'All done — so sparkly!'
-                    : 'Tap the toothbrush bubbles ($remaining left)',
-                style: TTTypography.subtitle(),
-              ),
+              Text(_subtitle, style: TTTypography.subtitle()),
               Expanded(
                 child: AnimatedBuilder(
                   animation: _float,
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        final bob = math.sin(_float.value * math.pi * 2) * 10;
+                        final bob =
+                            math.sin(_float.value * math.pi * 2) * 12;
+                        final x = constraints.maxWidth / 2 - _bubbleSize / 2;
                         final due = _dueCount > 0;
                         return Stack(
-                          children: choreBubblesAlongBottom(
-                            count: BrushTeethRules.maxSteps,
-                            maxWidth: constraints.maxWidth,
-                            bubbleSize: bubbleSize,
-                            bob: bob,
-                            buildAt: (i, left, bottom) {
-                              final finished = _done.contains(i);
-                              final showBadge = due && i == 0 && !finished;
-                              return Positioned(
-                                left: left,
-                                bottom: bottom,
-                                child: BounceButton(
-                                  onPressed: finished || _actionInProgress
-                                      ? null
-                                      : () => _tapBubble(i),
-                                  enabled: !finished && !_actionInProgress,
-                                  semanticLabel: 'Brush teeth bubble ${i + 1}',
-                                  child: TeethBubble(
-                                    done: finished,
-                                    playing: finished && _actionInProgress,
-                                    highlighted: showBadge,
-                                    badgeCount: showBadge ? _dueCount : 0,
-                                  ),
+                          children: [
+                            Positioned(
+                              left: x,
+                              bottom: 48 + bob,
+                              child: BounceButton(
+                                onPressed: !_actionInProgress && !_celebrating
+                                    ? _tapBubble
+                                    : null,
+                                enabled: !_actionInProgress && !_celebrating,
+                                semanticLabel: 'Brush teeth',
+                                child: TeethBubble(
+                                  done: !due && _clearedThisSession > 0,
+                                  playing: _actionInProgress,
+                                  highlighted: due,
+                                  badgeCount: _dueCount,
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                            ),
+                          ],
                         );
                       },
                     );
@@ -363,7 +379,6 @@ class _TeethVideoLayer extends StatelessWidget {
   }
 }
 
-/// Sparkly toothbrush bubble — same glassy float language as feed activity bubbles.
 class TeethBubble extends StatelessWidget {
   const TeethBubble({
     super.key,
@@ -378,7 +393,7 @@ class TeethBubble extends StatelessWidget {
   final bool highlighted;
   final int badgeCount;
 
-  static const double _size = 84;
+  static const double _size = 96;
 
   @override
   Widget build(BuildContext context) {
@@ -422,8 +437,9 @@ class TeethBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: TTColors.teethWarm.withValues(alpha: 0.28),
-                    blurRadius: 14,
+                    color: TTColors.teethWarm
+                        .withValues(alpha: highlighted ? 0.5 : 0.28),
+                    blurRadius: highlighted ? 18 : 14,
                     offset: const Offset(0, 6),
                   ),
                   BoxShadow(
@@ -434,36 +450,9 @@ class TeethBubble extends StatelessWidget {
                 ],
               ),
             ),
-            Positioned(
-              left: _size * 0.18,
-              top: _size * 0.16,
-              child: Transform.rotate(
-                angle: -0.5,
-                child: Container(
-                  width: _size * 0.30,
-                  height: _size * 0.14,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.90),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              right: _size * 0.20,
-              bottom: _size * 0.24,
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.80),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
             Icon(
               Icons.clean_hands_rounded,
-              size: 34,
+              size: 40,
               color: done
                   ? TTColors.teethWarm.withValues(alpha: 0.95)
                   : TTColors.teethDeep,

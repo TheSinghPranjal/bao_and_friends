@@ -44,7 +44,6 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
   ];
 
   late FamilyCharacter character;
-  int stars = 12;
 
   VideoPlayerController? _video;
   bool _videoReady = false;
@@ -73,7 +72,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     // Resolve real sleep state first (do not force-sleep outside windows).
     unawaited(_refreshSleepState(initVideo: true));
     unawaited(_refreshTimers());
-    unawaited(_loadStars());
+    unawaited(StarsStore.total());
     _sleepCheckTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) {
@@ -89,12 +88,6 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       unawaited(_refreshSleepState());
       unawaited(_refreshTimers());
     }
-  }
-
-  Future<void> _loadStars() async {
-    final total = await StarsStore.total();
-    if (!mounted) return;
-    setState(() => stars = total);
   }
 
   Future<void> _refreshTimers() async {
@@ -305,7 +298,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     await context.push('${item.route}?character=${character.id.name}');
     if (!mounted) return;
     await _refreshTimers();
-    await _loadStars();
+    await StarsStore.total();
     // Restore sleep-based selection when returning home.
     setState(() {
       _selectedRoute = _isSleeping ? '/wake-up' : null;
@@ -334,7 +327,6 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
           Column(
             children: [
               TinyStatusBar(
-                stars: stars,
                 onSettings: () => context.push('/parent-gate'),
                 onProfile: () => context.push('/profile'),
                 leading: TtBackButton(

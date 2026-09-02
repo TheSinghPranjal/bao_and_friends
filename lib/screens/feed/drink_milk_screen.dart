@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/rewards.dart';
+import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -163,6 +164,7 @@ class _DrinkMilkScreenState extends State<DrinkMilkScreen>
       final reward = DrinkMilkRules.rewardForGlasses(_drunk.length);
       await Future<void>.delayed(const Duration(milliseconds: 900));
       if (!mounted) return;
+      await StarsStore.add(reward.stars);
       await _showReward(reward);
       if (!mounted) return;
       context.pop(true);
@@ -256,7 +258,6 @@ class _DrinkMilkScreenState extends State<DrinkMilkScreen>
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: 12 + (_drunk.isEmpty ? 0 : 1),
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop(false)),
               ),

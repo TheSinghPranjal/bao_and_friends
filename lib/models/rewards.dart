@@ -265,8 +265,8 @@ abstract final class PlayGameRules {
 
 /// Chores reward math — tap floating chores (same loop shape as Feed).
 abstract final class ChoresRules {
-  static const int maxChores = 10;
-  static const int choresForFullReward = 10;
+  static const int maxChores = 8;
+  static const int choresForFullReward = 8;
   static const Duration reminderInterval = Duration(hours: 4);
 
   /// 1 chore → 1 star. All required chores → 3 stars + 1 Magic Bean.
@@ -296,12 +296,11 @@ abstract final class CombHairRules {
   static const int stepsForFullReward = 4;
   static const Duration reminderInterval = Duration(hours: 8);
 
-  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
-  static RewardResult rewardForSteps(int completed) {
-    if (completed <= 0) {
+  static RewardResult rewardForClearedDues(int cleared) {
+    if (cleared <= 0) {
       return const RewardResult(message: 'Keep combing!');
     }
-    if (completed >= stepsForFullReward) {
+    if (cleared >= stepsForFullReward) {
       return const RewardResult(
         stars: 3,
         magicBeans: 1,
@@ -309,12 +308,16 @@ abstract final class CombHairRules {
       );
     }
     return RewardResult(
-      stars: 1,
-      message: completed == 1
-          ? 'Nice combing! One star for you!'
+      stars: cleared.clamp(1, 3),
+      message: cleared == 1
+          ? 'Nice combing! Hair looks tidy!'
           : 'Great combing! Keep going!',
     );
   }
+
+  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForSteps(int completed) =>
+      rewardForClearedDues(completed);
 }
 
 /// Wash Face reward math (same loop as Make Bed; reached from Chores).
@@ -323,12 +326,11 @@ abstract final class WashFaceRules {
   static const int stepsForFullReward = 4;
   static const Duration reminderInterval = Duration(hours: 8);
 
-  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
-  static RewardResult rewardForSteps(int completed) {
-    if (completed <= 0) {
+  static RewardResult rewardForClearedDues(int cleared) {
+    if (cleared <= 0) {
       return const RewardResult(message: 'Keep washing!');
     }
-    if (completed >= stepsForFullReward) {
+    if (cleared >= stepsForFullReward) {
       return const RewardResult(
         stars: 3,
         magicBeans: 1,
@@ -336,26 +338,29 @@ abstract final class WashFaceRules {
       );
     }
     return RewardResult(
-      stars: 1,
-      message: completed == 1
-          ? 'Nice washing! One star for you!'
+      stars: cleared.clamp(1, 3),
+      message: cleared == 1
+          ? 'Nice washing! Face feels fresh!'
           : 'Great washing! Keep going!',
     );
   }
+
+  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForSteps(int completed) =>
+      rewardForClearedDues(completed);
 }
 
-/// Bath reward math — tap floating bath bubbles.
+/// Bath reward math — clear due baths one by one.
 abstract final class BathRules {
   static const int maxSteps = 4;
   static const int stepsForFullReward = 4;
   static const Duration reminderInterval = Duration(hours: 6);
 
-  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
-  static RewardResult rewardForSteps(int completed) {
-    if (completed <= 0) {
+  static RewardResult rewardForClearedDues(int cleared) {
+    if (cleared <= 0) {
       return const RewardResult(message: 'Keep bathing!');
     }
-    if (completed >= stepsForFullReward) {
+    if (cleared >= stepsForFullReward) {
       return const RewardResult(
         stars: 3,
         magicBeans: 1,
@@ -363,12 +368,16 @@ abstract final class BathRules {
       );
     }
     return RewardResult(
-      stars: 1,
-      message: completed == 1
-          ? 'Nice bathing! One star for you!'
+      stars: cleared.clamp(1, 3),
+      message: cleared == 1
+          ? 'Nice bathing! All clean!'
           : 'Great bathing! Keep going!',
     );
   }
+
+  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForSteps(int completed) =>
+      rewardForClearedDues(completed);
 }
 
 /// Get Dressed — clothes then tie (2 steps).
@@ -430,18 +439,28 @@ abstract final class LearnAlphabetRules {
   }
 }
 
+/// Numbers lesson complete.
+abstract final class LearnNumbersRules {
+  static RewardResult rewardForComplete() {
+    return const RewardResult(
+      stars: 3,
+      magicBeans: 1,
+      message: 'Amazing! You learned 1 to 20 with Bao!',
+    );
+  }
+}
+
 /// Brush Teeth reward math (same loop as Make Bed; reached from Chores).
 abstract final class BrushTeethRules {
   static const int maxSteps = 4;
   static const int stepsForFullReward = 4;
   static const Duration reminderInterval = Duration(hours: 6);
 
-  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
-  static RewardResult rewardForSteps(int completed) {
-    if (completed <= 0) {
+  static RewardResult rewardForClearedDues(int cleared) {
+    if (cleared <= 0) {
       return const RewardResult(message: 'Keep brushing!');
     }
-    if (completed >= stepsForFullReward) {
+    if (cleared >= stepsForFullReward) {
       return const RewardResult(
         stars: 3,
         magicBeans: 1,
@@ -449,12 +468,16 @@ abstract final class BrushTeethRules {
       );
     }
     return RewardResult(
-      stars: 1,
-      message: completed == 1
-          ? 'Nice brushing! One star for you!'
+      stars: cleared.clamp(1, 3),
+      message: cleared == 1
+          ? 'Nice brushing! Sparkly smile!'
           : 'Great brushing! Keep going!',
     );
   }
+
+  /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForSteps(int completed) =>
+      rewardForClearedDues(completed);
 }
 
 /// Make Bed reward math (same loop as Eat Apple; reached from Chores).
@@ -462,6 +485,26 @@ abstract final class MakeBedRules {
   static const int maxSteps = 4;
   static const int stepsForFullReward = 4;
   static const Duration reminderInterval = Duration(hours: 8);
+
+  /// Reward after clearing all current due make-bed slots (1–4).
+  static RewardResult rewardForClearedDues(int cleared) {
+    if (cleared <= 0) {
+      return const RewardResult(message: 'Keep helping!');
+    }
+    if (cleared >= stepsForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! All beds made today so far!',
+      );
+    }
+    return RewardResult(
+      stars: cleared.clamp(1, 3),
+      message: cleared == 1
+          ? 'Nice work! Bed is tidy!'
+          : 'Great helping! Bed looks cozy!',
+    );
+  }
 
   /// 1 step → 1 star. All required steps → 3 stars + 1 Magic Bean.
   static RewardResult rewardForSteps(int completed) {
@@ -504,4 +547,23 @@ abstract final class ChoreTimers {
   static const Duration getDressed = Duration(hours: 12);
   static const Duration combHair = Duration(hours: 8);
   static const Duration wearShoes = Duration(hours: 24);
+}
+
+/// Stars for Make Bed / Brush / Wash / Bath / Comb — anytime taps.
+abstract final class ChoreDueTapRules {
+  static const int starsDue = 10;
+  static const int starsBonus = 5;
+
+  static RewardResult rewardForTap({
+    required bool wasDue,
+    required String choreLabel,
+  }) {
+    final stars = wasDue ? starsDue : starsBonus;
+    return RewardResult(
+      stars: stars,
+      message: wasDue
+          ? 'Due $choreLabel done! +$stars stars'
+          : 'Bonus $choreLabel! +$stars stars',
+    );
+  }
 }

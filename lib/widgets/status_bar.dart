@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../services/stars_store.dart';
 import '../theme/tt_colors.dart';
 import '../theme/tt_typography.dart'; // TTTypography, TTSpacing
 import 'back_button_circle.dart';
@@ -114,17 +117,17 @@ class _LeafPainter extends CustomPainter {
 }
 
 /// Persistent top status bar: Stars + Settings.
+///
+/// Star count always comes from [StarsStore] so every screen shows the same total.
 class TinyStatusBar extends StatelessWidget {
   const TinyStatusBar({
     super.key,
-    this.stars = 0,
     this.onSettings,
     this.onProfile,
     this.showCounters = true,
     this.leading,
   });
 
-  final int stars;
   final VoidCallback? onSettings;
   final VoidCallback? onProfile;
   final bool showCounters;
@@ -156,7 +159,7 @@ class TinyStatusBar extends StatelessWidget {
                 ),
             const Spacer(),
             if (showCounters) ...[
-              StarCountPill(stars: stars),
+              const StarCountPill(),
               const SizedBox(width: 10),
             ],
             TtSettingsButton(onPressed: onSettings),
@@ -167,63 +170,77 @@ class TinyStatusBar extends StatelessWidget {
   }
 }
 
-/// Cream pill + golden star + count — height matches [GoldCircleIcon] (52).
-class StarCountPill extends StatelessWidget {
-  const StarCountPill({super.key, required this.stars});
-
-  final int stars;
+/// Cream pill + golden star + shared [StarsStore] count.
+class StarCountPill extends StatefulWidget {
+  const StarCountPill({super.key});
 
   /// Same face diameter as back / settings gold circles.
   static const double height = 52;
 
   @override
+  State<StarCountPill> createState() => _StarCountPillState();
+}
+
+class _StarCountPillState extends State<StarCountPill> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(StarsStore.total());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      padding: const EdgeInsets.fromLTRB(12, 0, 16, 0),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF8F0),
-        borderRadius: BorderRadius.circular(height / 2),
-        boxShadow: [
-          BoxShadow(
-            color: TTColors.darkBrown.withValues(alpha: 0.14),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+    return ValueListenableBuilder<int>(
+      valueListenable: StarsStore.totalListenable,
+      builder: (context, stars, _) {
+        return Container(
+          height: StarCountPill.height,
+          padding: const EdgeInsets.fromLTRB(12, 0, 16, 0),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF8F0),
+            borderRadius: BorderRadius.circular(StarCountPill.height / 2),
+            boxShadow: [
+              BoxShadow(
+                color: TTColors.darkBrown.withValues(alpha: 0.14),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Soft 3D-looking gold star
-          ShaderMask(
-            blendMode: BlendMode.srcIn,
-            shaderCallback: (bounds) => const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFFFFE066),
-                Color(0xFFFFC93C),
-                Color(0xFFF5A623),
-              ],
-            ).createShader(bounds),
-            child: const Icon(
-              Icons.star_rounded,
-              size: 30,
-              color: Colors.white,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ShaderMask(
+                blendMode: BlendMode.srcIn,
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFFFE066),
+                    Color(0xFFFFC93C),
+                    Color(0xFFF5A623),
+                  ],
+                ).createShader(bounds),
+                child: const Icon(
+                  Icons.star_rounded,
+                  size: 30,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '$stars',
+                style:
+                    TTTypography.title(color: const Color(0xFF5A5A5A)).copyWith(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  height: 1,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 6),
-          Text(
-            '$stars',
-            style: TTTypography.title(color: const Color(0xFF5A5A5A)).copyWith(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              height: 1,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

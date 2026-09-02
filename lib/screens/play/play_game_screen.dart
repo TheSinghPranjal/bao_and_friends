@@ -38,7 +38,6 @@ class _PlayGameScreenState extends State<PlayGameScreen>
   late final AnimationController _crossfade;
   bool _actionInProgress = false;
   int _dueCount = 0;
-  int _stars = 12;
 
   VideoPlayerController? _idleVideo;
   VideoPlayerController? _actionVideo;
@@ -65,11 +64,9 @@ class _PlayGameScreenState extends State<PlayGameScreen>
 
   Future<void> _refreshMeta() async {
     final due = await PlayDueStore.dueCount(_game.id);
-    final stars = await StarsStore.total();
     if (!mounted) return;
     setState(() {
       _dueCount = due;
-      _stars = stars;
     });
   }
 
@@ -200,12 +197,11 @@ class _PlayGameScreenState extends State<PlayGameScreen>
     if (!mounted) return;
 
     final result = await PlayDueStore.completeOnePlay(_game.id);
-    final total = await StarsStore.add(result.stars);
+    await StarsStore.add(result.stars);
     if (!mounted) return;
 
     setState(() {
       _dueCount = result.remainingDue;
-      _stars = total;
     });
 
     final reward = RewardResult(
@@ -307,7 +303,6 @@ class _PlayGameScreenState extends State<PlayGameScreen>
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: _stars,
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop(false)),
               ),

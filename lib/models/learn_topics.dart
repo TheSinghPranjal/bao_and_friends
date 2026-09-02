@@ -36,6 +36,7 @@ abstract final class LearnTopics {
       label: 'Numbers',
       icon: Icons.looks_one_rounded,
       accent: Color(0xFFFFB74D),
+      route: '/learn/numbers',
     ),
     LearnTopicSpec(
       id: 'words',
@@ -153,5 +154,24 @@ abstract final class AlphabetVideos {
     'Q – T',
     'U – X',
     'Y – Z',
+  ];
+}
+
+/// Numbers segment videos (1–20 in order).
+abstract final class NumberVideos {
+  static const folder = 'assets/videos/learn/numbers';
+
+  static const segments = <String>[
+    '$folder/numbers_from_1to5.mp4',
+    '$folder/numbers_from_6to10.mp4',
+    '$folder/numbers_from_11to15.mp4',
+    '$folder/numbers_from_16to20.mp4',
+  ];
+
+  static const labels = <String>[
+    '1 – 5',
+    '6 – 10',
+    '11 – 15',
+    '16 – 20',
   ];
 }

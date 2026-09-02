@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/activity_schedule.dart';
 import '../../models/rewards.dart';
+import '../../services/schedule_store.dart';
+import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -14,8 +17,8 @@ import '../../widgets/due_count_badge.dart';
 import '../../widgets/status_bar.dart';
 import '../drink/drink_water_screen.dart' show RewardPopup;
 
-/// Comb Hair Activity (under Chores) — tap floating comb bubbles (max 4).
-/// 1 tap → 1 star. All 4 → 3 stars + 1 Magic Bean.
+/// Comb Hair — one bottom bubble with a due badge (up to 4× / day).
+/// Tap anytime: due = 10★, else 5★.
 class CombHairScreen extends StatefulWidget {
   const CombHairScreen({super.key});
 
@@ -30,13 +33,15 @@ class _CombHairScreenState extends State<CombHairScreen>
   static const _combingVideoAsset =
       'assets/videos/chore/comb_hair/bao_combing_hair.mp4';
   static const _crossfadeDuration = Duration(milliseconds: 550);
+  static const _bubbleSize = 96.0;
 
   late final AnimationController _float;
   late final AnimationController _crossfade;
-  final Set<int> _done = {};
   bool _celebrating = false;
   bool _actionInProgress = false;
   int _dueCount = 0;
+  int _clearedThisSession = 0;
+  Completer<void>? _actionDone;
 
   VideoPlayerController? _idleVideo;
   VideoPlayerController? _combingVideo;
@@ -60,7 +65,7 @@ class _CombHairScreenState extends State<CombHairScreen>
   }
 
   Future<void> _loadDue() async {
-    const due = 0;
+    final due = await ScheduleStore.dueCount(ActivityId.combHair);
     if (!mounted) return;
     setState(() => _dueCount = due);
   }
@@ -88,8 +93,8 @@ class _CombHairScreenState extends State<CombHairScreen>
         if (v == null || !_actionInProgress || !v.value.isInitialized) return;
         final duration = v.value.duration;
         if (duration <= Duration.zero) return;
-        final nearEnd = v.value.position >=
-            duration - const Duration(milliseconds: 80);
+        final nearEnd =
+            v.value.position >= duration - const Duration(milliseconds: 80);
         if (nearEnd && !v.value.isPlaying) {
           unawaited(_finishAction());
         }
@@ -112,6 +117,7 @@ class _CombHairScreenState extends State<CombHairScreen>
     final combing = _combingVideo;
     if (combing == null || !_combingReady || _actionInProgress) return;
 
+    _actionDone = Completer<void>();
     setState(() => _actionInProgress = true);
 
     await combing.seekTo(Duration.zero);
@@ -119,6 +125,10 @@ class _CombHairScreenState extends State<CombHairScreen>
     if (!mounted) return;
 
     await _crossfade.forward();
+    await _actionDone?.future.timeout(
+      const Duration(seconds: 8),
+      onTimeout: () {},
+    );
   }
 
   Future<void> _finishAction() async {
@@ -130,6 +140,9 @@ class _CombHairScreenState extends State<CombHairScreen>
         await combing.setLooping(true);
         await combing.seekTo(Duration.zero);
         await combing.play();
+      }
+      if (_actionDone != null && !_actionDone!.isCompleted) {
+        _actionDone!.complete();
       }
       return;
     }
@@ -146,6 +159,9 @@ class _CombHairScreenState extends State<CombHairScreen>
     await _crossfade.reverse();
     if (!mounted) return;
     setState(() => _actionInProgress = false);
+    if (_actionDone != null && !_actionDone!.isCompleted) {
+      _actionDone!.complete();
+    }
   }
 
   @override
@@ -161,20 +177,31 @@ class _CombHairScreenState extends State<CombHairScreen>
     super.dispose();
   }
 
-  Future<void> _tapBubble(int index) async {
-    if (_celebrating || _done.contains(index) || _actionInProgress) return;
-    setState(() => _done.add(index));
-    unawaited(_playCombingAnimation());
+  Future<void> _tapBubble() async {
+    if (_celebrating || _actionInProgress) return;
 
-    if (_done.length >= CombHairRules.stepsForFullReward) {
-      setState(() => _celebrating = true);
-      final reward = CombHairRules.rewardForSteps(_done.length);
-      await Future<void>.delayed(const Duration(milliseconds: 900));
-      if (!mounted) return;
-      await _showReward(reward);
-      if (!mounted) return;
-      context.pop(true);
-    }
+    await _playCombingAnimation();
+    if (!mounted) return;
+
+    final result = await ScheduleStore.completeOneDue(ActivityId.combHair);
+    await StarsStore.add(result.stars);
+    if (!mounted) return;
+
+    setState(() {
+      _dueCount = result.remainingDue;
+      if (result.wasDue) _clearedThisSession++;
+      _celebrating = true;
+    });
+
+    final reward = ChoreDueTapRules.rewardForTap(
+      wasDue: result.wasDue,
+      choreLabel: 'comb hair',
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 280));
+    if (!mounted) return;
+    await _showReward(reward);
+    if (!mounted) return;
+    context.pop(true);
   }
 
   Future<void> _showReward(RewardResult reward) {
@@ -204,11 +231,16 @@ class _CombHairScreenState extends State<CombHairScreen>
     );
   }
 
+  String get _subtitle {
+    if (_celebrating) return 'Nice combing!';
+    if (_dueCount > 0) {
+      return 'Due ×$_dueCount — tap for ${ChoreDueTapRules.starsDue}★';
+    }
+    return 'Tap anytime for ${ChoreDueTapRules.starsBonus}★';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final remaining = CombHairRules.maxSteps - _done.length;
-    const bubbleSize = 84.0;
-
     return Scaffold(
       backgroundColor: TTColors.combCream,
       body: Stack(
@@ -227,10 +259,7 @@ class _CombHairScreenState extends State<CombHairScreen>
               ),
             ),
           ),
-          _CombVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
+          _CombVideoLayer(controller: _idleVideo, ready: _idleReady),
           AnimatedBuilder(
             animation: _crossfade,
             builder: (context, child) {
@@ -263,7 +292,6 @@ class _CombHairScreenState extends State<CombHairScreen>
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: 12 + (_done.isEmpty ? 0 : 1),
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop(false)),
               ),
@@ -272,48 +300,37 @@ class _CombHairScreenState extends State<CombHairScreen>
                 'Comb Hair!',
                 style: TTTypography.headline(color: TTColors.darkBrown),
               ),
-              Text(
-                remaining == 0
-                    ? 'All done — so neat!'
-                    : 'Tap the comb bubbles ($remaining left)',
-                style: TTTypography.subtitle(),
-              ),
+              Text(_subtitle, style: TTTypography.subtitle()),
               Expanded(
                 child: AnimatedBuilder(
                   animation: _float,
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        final bob = math.sin(_float.value * math.pi * 2) * 10;
+                        final bob =
+                            math.sin(_float.value * math.pi * 2) * 12;
+                        final x = constraints.maxWidth / 2 - _bubbleSize / 2;
                         final due = _dueCount > 0;
                         return Stack(
-                          children: choreBubblesAlongBottom(
-                            count: CombHairRules.maxSteps,
-                            maxWidth: constraints.maxWidth,
-                            bubbleSize: bubbleSize,
-                            bob: bob,
-                            buildAt: (i, left, bottom) {
-                              final finished = _done.contains(i);
-                              final showBadge = due && i == 0 && !finished;
-                              return Positioned(
-                                left: left,
-                                bottom: bottom,
-                                child: BounceButton(
-                                  onPressed: finished || _actionInProgress
-                                      ? null
-                                      : () => _tapBubble(i),
-                                  enabled: !finished && !_actionInProgress,
-                                  semanticLabel: 'Comb hair bubble ${i + 1}',
-                                  child: CombBubble(
-                                    done: finished,
-                                    playing: finished && _actionInProgress,
-                                    highlighted: showBadge,
-                                    badgeCount: showBadge ? _dueCount : 0,
-                                  ),
+                          children: [
+                            Positioned(
+                              left: x,
+                              bottom: 48 + bob,
+                              child: BounceButton(
+                                onPressed: !_actionInProgress && !_celebrating
+                                    ? _tapBubble
+                                    : null,
+                                enabled: !_actionInProgress && !_celebrating,
+                                semanticLabel: 'Comb hair',
+                                child: CombBubble(
+                                  done: !due && _clearedThisSession > 0,
+                                  playing: _actionInProgress,
+                                  highlighted: due,
+                                  badgeCount: _dueCount,
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                            ),
+                          ],
                         );
                       },
                     );
@@ -361,7 +378,6 @@ class _CombVideoLayer extends StatelessWidget {
   }
 }
 
-/// Soft comb bubble — same glassy float language as feed activity bubbles.
 class CombBubble extends StatelessWidget {
   const CombBubble({
     super.key,
@@ -376,7 +392,7 @@ class CombBubble extends StatelessWidget {
   final bool highlighted;
   final int badgeCount;
 
-  static const double _size = 84;
+  static const double _size = 96;
 
   @override
   Widget build(BuildContext context) {
@@ -420,8 +436,9 @@ class CombBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: TTColors.combWarm.withValues(alpha: 0.28),
-                    blurRadius: 14,
+                    color: TTColors.combWarm
+                        .withValues(alpha: highlighted ? 0.5 : 0.28),
+                    blurRadius: highlighted ? 18 : 14,
                     offset: const Offset(0, 6),
                   ),
                   BoxShadow(
@@ -432,36 +449,9 @@ class CombBubble extends StatelessWidget {
                 ],
               ),
             ),
-            Positioned(
-              left: _size * 0.18,
-              top: _size * 0.16,
-              child: Transform.rotate(
-                angle: -0.5,
-                child: Container(
-                  width: _size * 0.30,
-                  height: _size * 0.14,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.90),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              right: _size * 0.20,
-              bottom: _size * 0.24,
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.80),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
             Icon(
               Icons.content_cut_rounded,
-              size: 34,
+              size: 40,
               color: done
                   ? TTColors.combWarm.withValues(alpha: 0.95)
                   : TTColors.combDeep,

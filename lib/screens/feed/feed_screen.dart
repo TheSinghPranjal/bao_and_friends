@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 import '../../models/activity_schedule.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
+import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -128,6 +129,7 @@ class _FeedScreenState extends State<FeedScreen> {
       final reward = FeedRules.rewardForFoods(_eaten.length);
       await Future<void>.delayed(const Duration(milliseconds: 600));
       if (!mounted) return;
+      await StarsStore.add(reward.stars);
       await _showReward(reward);
       if (!mounted) return;
       context.pop();
@@ -206,7 +208,6 @@ class _FeedScreenState extends State<FeedScreen> {
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: 12 + (_eaten.isEmpty ? 0 : 1),
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop()),
               ),

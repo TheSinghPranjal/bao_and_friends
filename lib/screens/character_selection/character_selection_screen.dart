@@ -24,7 +24,6 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
   double _page = 0;
 
   // Demo values — wire these to your real player-progress provider.
-  final int stars = 125;
 
   @override
   void initState() {
@@ -134,7 +133,6 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
               children: [
                 const SizedBox(height: 8),
                 _TopBar(
-                  stars: stars,
                   onBack: () => context.pop(),
                   onSettings: _openParentGateSettings,
                 ),
@@ -213,12 +211,10 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
 // =====================================================================
 class _TopBar extends StatelessWidget {
   const _TopBar({
-    required this.stars,
     required this.onBack,
     required this.onSettings,
   });
 
-  final int stars;
   final VoidCallback onBack;
   final VoidCallback onSettings;
 
@@ -230,7 +226,7 @@ class _TopBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           TtBackButton(onPressed: onBack),
-          StarCountPill(stars: stars),
+          StarCountPill(),
         ],
       ),
     );

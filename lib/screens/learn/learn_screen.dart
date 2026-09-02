@@ -131,7 +131,6 @@ class _LearnScreenState extends State<LearnScreen> {
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: 12 + _done.length,
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop()),
               ),

@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import '../../models/activity_schedule.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
+import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -164,6 +165,7 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
       final reward = DrinkWaterRules.rewardForGlasses(_drunk.length);
       await Future<void>.delayed(const Duration(milliseconds: 900));
       if (!mounted) return;
+      await StarsStore.add(reward.stars);
       await _showReward(reward);
       if (!mounted) return;
       await ScheduleStore.markCompleted(ActivityId.drink);
@@ -261,7 +263,6 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: 12 + (_drunk.isEmpty ? 0 : 1),
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop()),
               ),

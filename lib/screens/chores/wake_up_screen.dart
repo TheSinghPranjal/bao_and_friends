@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/rewards.dart';
+import '../../services/stars_store.dart';
 import '../../services/sleep_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
@@ -133,7 +134,8 @@ class _WakeUpScreenState extends State<WakeUpScreen>
     final reward = WakeUpRules.reward;
     await Future<void>.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
-    await _showReward(reward);
+    await StarsStore.add(reward.stars);
+      await _showReward(reward);
     if (!mounted) return;
     context.pop(true);
   }
@@ -241,7 +243,6 @@ class _WakeUpScreenState extends State<WakeUpScreen>
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: 12 + (_done ? 1 : 0),
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop(false)),
               ),

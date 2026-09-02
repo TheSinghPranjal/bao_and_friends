@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import '../../models/activity_schedule.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
+import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -16,8 +17,8 @@ import '../../widgets/due_count_badge.dart';
 import '../../widgets/status_bar.dart';
 import '../drink/drink_water_screen.dart' show RewardPopup;
 
-/// Bath Activity (under Chores) — tap floating bath bubbles (max 4).
-/// 1 tap → 1 star. All 4 → 3 stars + 1 Magic Bean.
+/// Bath — one bottom bubble with a due badge (up to 4× / day).
+/// Tap anytime: due = 10★, else 5★.
 class BathScreen extends StatefulWidget {
   const BathScreen({super.key});
 
@@ -25,19 +26,22 @@ class BathScreen extends StatefulWidget {
   State<BathScreen> createState() => _BathScreenState();
 }
 
-class _BathScreenState extends State<BathScreen> with TickerProviderStateMixin {
+class _BathScreenState extends State<BathScreen>
+    with TickerProviderStateMixin {
   static const _idleVideoAsset =
       'assets/videos/chore/bath/bao_not_taking_a_bath_video.mp4';
   static const _bathingVideoAsset =
       'assets/videos/chore/bath/bao_taking_a_bath_video.mp4';
   static const _crossfadeDuration = Duration(milliseconds: 550);
+  static const _bubbleSize = 96.0;
 
   late final AnimationController _float;
   late final AnimationController _crossfade;
-  final Set<int> _done = {};
   bool _celebrating = false;
   bool _actionInProgress = false;
   int _dueCount = 0;
+  int _clearedThisSession = 0;
+  Completer<void>? _actionDone;
 
   VideoPlayerController? _idleVideo;
   VideoPlayerController? _bathingVideo;
@@ -113,6 +117,7 @@ class _BathScreenState extends State<BathScreen> with TickerProviderStateMixin {
     final bathing = _bathingVideo;
     if (bathing == null || !_bathingReady || _actionInProgress) return;
 
+    _actionDone = Completer<void>();
     setState(() => _actionInProgress = true);
 
     await bathing.seekTo(Duration.zero);
@@ -120,6 +125,10 @@ class _BathScreenState extends State<BathScreen> with TickerProviderStateMixin {
     if (!mounted) return;
 
     await _crossfade.forward();
+    await _actionDone?.future.timeout(
+      const Duration(seconds: 8),
+      onTimeout: () {},
+    );
   }
 
   Future<void> _finishAction() async {
@@ -131,6 +140,9 @@ class _BathScreenState extends State<BathScreen> with TickerProviderStateMixin {
         await bathing.setLooping(true);
         await bathing.seekTo(Duration.zero);
         await bathing.play();
+      }
+      if (_actionDone != null && !_actionDone!.isCompleted) {
+        _actionDone!.complete();
       }
       return;
     }
@@ -147,6 +159,9 @@ class _BathScreenState extends State<BathScreen> with TickerProviderStateMixin {
     await _crossfade.reverse();
     if (!mounted) return;
     setState(() => _actionInProgress = false);
+    if (_actionDone != null && !_actionDone!.isCompleted) {
+      _actionDone!.complete();
+    }
   }
 
   @override
@@ -162,20 +177,31 @@ class _BathScreenState extends State<BathScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Future<void> _tapBubble(int index) async {
-    if (_celebrating || _done.contains(index) || _actionInProgress) return;
-    setState(() => _done.add(index));
-    unawaited(_playBathingAnimation());
+  Future<void> _tapBubble() async {
+    if (_celebrating || _actionInProgress) return;
 
-    if (_done.length >= BathRules.stepsForFullReward) {
-      setState(() => _celebrating = true);
-      final reward = BathRules.rewardForSteps(_done.length);
-      await Future<void>.delayed(const Duration(milliseconds: 900));
-      if (!mounted) return;
-      await _showReward(reward);
-      if (!mounted) return;
-      context.pop(true);
-    }
+    await _playBathingAnimation();
+    if (!mounted) return;
+
+    final result = await ScheduleStore.completeOneDue(ActivityId.bath);
+    await StarsStore.add(result.stars);
+    if (!mounted) return;
+
+    setState(() {
+      _dueCount = result.remainingDue;
+      if (result.wasDue) _clearedThisSession++;
+      _celebrating = true;
+    });
+
+    final reward = ChoreDueTapRules.rewardForTap(
+      wasDue: result.wasDue,
+      choreLabel: 'bath',
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 280));
+    if (!mounted) return;
+    await _showReward(reward);
+    if (!mounted) return;
+    context.pop(true);
   }
 
   Future<void> _showReward(RewardResult reward) {
@@ -205,11 +231,16 @@ class _BathScreenState extends State<BathScreen> with TickerProviderStateMixin {
     );
   }
 
+  String get _subtitle {
+    if (_celebrating) return 'Nice bathing!';
+    if (_dueCount > 0) {
+      return 'Due ×$_dueCount — tap for ${ChoreDueTapRules.starsDue}★';
+    }
+    return 'Tap anytime for ${ChoreDueTapRules.starsBonus}★';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final remaining = BathRules.maxSteps - _done.length;
-    const bubbleSize = 84.0;
-
     return Scaffold(
       backgroundColor: TTColors.bathCream,
       body: Stack(
@@ -228,10 +259,7 @@ class _BathScreenState extends State<BathScreen> with TickerProviderStateMixin {
               ),
             ),
           ),
-          _BathVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
+          _BathVideoLayer(controller: _idleVideo, ready: _idleReady),
           AnimatedBuilder(
             animation: _crossfade,
             builder: (context, child) {
@@ -264,7 +292,6 @@ class _BathScreenState extends State<BathScreen> with TickerProviderStateMixin {
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: 12 + (_done.isEmpty ? 0 : 1),
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop(false)),
               ),
@@ -273,48 +300,37 @@ class _BathScreenState extends State<BathScreen> with TickerProviderStateMixin {
                 'Bath Time!',
                 style: TTTypography.headline(color: TTColors.darkBrown),
               ),
-              Text(
-                remaining == 0
-                    ? 'All done — squeaky clean!'
-                    : 'Tap the bath bubbles ($remaining left)',
-                style: TTTypography.subtitle(),
-              ),
+              Text(_subtitle, style: TTTypography.subtitle()),
               Expanded(
                 child: AnimatedBuilder(
                   animation: _float,
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        final bob = math.sin(_float.value * math.pi * 2) * 10;
+                        final bob =
+                            math.sin(_float.value * math.pi * 2) * 12;
+                        final x = constraints.maxWidth / 2 - _bubbleSize / 2;
                         final due = _dueCount > 0;
                         return Stack(
-                          children: choreBubblesAlongBottom(
-                            count: BathRules.maxSteps,
-                            maxWidth: constraints.maxWidth,
-                            bubbleSize: bubbleSize,
-                            bob: bob,
-                            buildAt: (i, left, bottom) {
-                              final finished = _done.contains(i);
-                              final showBadge = due && i == 0 && !finished;
-                              return Positioned(
-                                left: left,
-                                bottom: bottom,
-                                child: BounceButton(
-                                  onPressed: finished || _actionInProgress
-                                      ? null
-                                      : () => _tapBubble(i),
-                                  enabled: !finished && !_actionInProgress,
-                                  semanticLabel: 'Bath bubble ${i + 1}',
-                                  child: BathBubble(
-                                    done: finished,
-                                    playing: finished && _actionInProgress,
-                                    highlighted: showBadge,
-                                    badgeCount: showBadge ? _dueCount : 0,
-                                  ),
+                          children: [
+                            Positioned(
+                              left: x,
+                              bottom: 48 + bob,
+                              child: BounceButton(
+                                onPressed: !_actionInProgress && !_celebrating
+                                    ? _tapBubble
+                                    : null,
+                                enabled: !_actionInProgress && !_celebrating,
+                                semanticLabel: 'Bath',
+                                child: BathBubble(
+                                  done: !due && _clearedThisSession > 0,
+                                  playing: _actionInProgress,
+                                  highlighted: due,
+                                  badgeCount: _dueCount,
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                            ),
+                          ],
                         );
                       },
                     );
@@ -362,7 +378,6 @@ class _BathVideoLayer extends StatelessWidget {
   }
 }
 
-/// Soft bath bubble — same glassy float language as other chore bubbles.
 class BathBubble extends StatelessWidget {
   const BathBubble({
     super.key,
@@ -377,7 +392,7 @@ class BathBubble extends StatelessWidget {
   final bool highlighted;
   final int badgeCount;
 
-  static const double _size = 84;
+  static const double _size = 96;
 
   @override
   Widget build(BuildContext context) {
@@ -421,8 +436,9 @@ class BathBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: TTColors.bathWarm.withValues(alpha: 0.28),
-                    blurRadius: 14,
+                    color: TTColors.bathWarm
+                        .withValues(alpha: highlighted ? 0.5 : 0.28),
+                    blurRadius: highlighted ? 18 : 14,
                     offset: const Offset(0, 6),
                   ),
                   BoxShadow(
@@ -433,36 +449,9 @@ class BathBubble extends StatelessWidget {
                 ],
               ),
             ),
-            Positioned(
-              left: _size * 0.18,
-              top: _size * 0.16,
-              child: Transform.rotate(
-                angle: -0.5,
-                child: Container(
-                  width: _size * 0.30,
-                  height: _size * 0.14,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.90),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              right: _size * 0.20,
-              bottom: _size * 0.24,
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.80),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
             Icon(
               Icons.bathtub_rounded,
-              size: 34,
+              size: 40,
               color: done
                   ? TTColors.bathWarm.withValues(alpha: 0.95)
                   : TTColors.bathDeep,

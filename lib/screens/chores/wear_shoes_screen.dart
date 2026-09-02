@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import '../../models/activity_schedule.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
+import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -242,7 +243,8 @@ class _WearShoesScreenState extends State<WearShoesScreen>
     final reward = WearShoesRules.rewardForSteps(2);
     await Future<void>.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
-    await _showReward(reward);
+    await StarsStore.add(reward.stars);
+      await _showReward(reward);
     if (!mounted) return;
     context.pop(true);
   }
@@ -438,7 +440,6 @@ class _WearShoesScreenState extends State<WearShoesScreen>
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: 12 + (_shoeCompleted ? 1 : 0) + (_bagCompleted ? 1 : 0),
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop(false)),
               ),

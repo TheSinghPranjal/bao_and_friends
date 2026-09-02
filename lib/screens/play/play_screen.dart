@@ -6,7 +6,6 @@ import 'package:video_player/video_player.dart';
 
 import '../../models/play_games.dart';
 import '../../services/play_due_store.dart';
-import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -27,7 +26,6 @@ class _PlayScreenState extends State<PlayScreen> {
 
   VideoPlayerController? _idleVideo;
   bool _idleReady = false;
-  int _stars = 12;
   Map<String, int> _dueByGame = {};
   Timer? _refreshTimer;
 
@@ -43,14 +41,12 @@ class _PlayScreenState extends State<PlayScreen> {
   }
 
   Future<void> _refresh() async {
-    final stars = await StarsStore.total();
     final dues = <String, int>{};
     for (final game in PlayGames.all) {
       dues[game.id] = await PlayDueStore.dueCount(game.id);
     }
     if (!mounted) return;
     setState(() {
-      _stars = stars;
       _dueByGame = dues;
     });
   }
@@ -142,7 +138,6 @@ class _PlayScreenState extends State<PlayScreen> {
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: _stars,
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop()),
               ),
