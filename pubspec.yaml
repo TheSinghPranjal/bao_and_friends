@@ -124,6 +124,13 @@ flutter:
     - assets/videos/chore/wear_shoe/bao_taking_bag_after_wearing_shoe.mp4
     - assets/videos/chore/comb_hair/bao_not_coming_hair.mp4
     - assets/videos/chore/comb_hair/bao_combing_hair.mp4
+    - assets/videos/learn/alphabets/Bao_speaking_alphabet_AtoD.mp4
+    - assets/videos/learn/alphabets/Bao_speaking_alphabet_EtoH.mp4
+    - assets/videos/learn/alphabets/Bao_speaking_alphabet_ItoL.mp4
+    - assets/videos/learn/alphabets/Bao_speaking_alphabet_MtoP.mp4
+    - assets/videos/learn/alphabets/Bao_speaking_alphabet_QtoT.mp4
+    - assets/videos/learn/alphabets/Bao_speaking_alphabet_UtoX.mp4
+    - assets/videos/learn/alphabets/Bao_speaking_alphabet_YtoZ.mp4
     - assets/videos/play/play_screen_video.mp4
     - assets/videos/play/football/bao_not_playing_football_video.mp4
     - assets/videos/play/football/bao_playing_football_video.mp4

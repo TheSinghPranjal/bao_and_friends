@@ -419,6 +419,17 @@ abstract final class WearShoesRules {
   }
 }
 
+/// Alphabet lesson complete.
+abstract final class LearnAlphabetRules {
+  static RewardResult rewardForComplete() {
+    return const RewardResult(
+      stars: 3,
+      magicBeans: 1,
+      message: 'Amazing! You learned A to Z with Bao!',
+    );
+  }
+}
+
 /// Brush Teeth reward math (same loop as Make Bed; reached from Chores).
 abstract final class BrushTeethRules {
   static const int maxSteps = 4;
