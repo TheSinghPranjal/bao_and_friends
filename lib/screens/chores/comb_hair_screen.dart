@@ -10,6 +10,7 @@ import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
 import '../../widgets/bounce_button.dart';
+import '../../widgets/due_count_badge.dart';
 import '../../widgets/status_bar.dart';
 import '../drink/drink_water_screen.dart' show RewardPopup;
 
@@ -35,6 +36,7 @@ class _CombHairScreenState extends State<CombHairScreen>
   final Set<int> _done = {};
   bool _celebrating = false;
   bool _actionInProgress = false;
+  int _dueCount = 0;
 
   VideoPlayerController? _idleVideo;
   VideoPlayerController? _combingVideo;
@@ -54,6 +56,13 @@ class _CombHairScreenState extends State<CombHairScreen>
       duration: _crossfadeDuration,
     );
     unawaited(_initVideos());
+    unawaited(_loadDue());
+  }
+
+  Future<void> _loadDue() async {
+    const due = 0;
+    if (!mounted) return;
+    setState(() => _dueCount = due);
   }
 
   Future<void> _initVideos() async {
@@ -275,38 +284,36 @@ class _CombHairScreenState extends State<CombHairScreen>
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
+                        final bob = math.sin(_float.value * math.pi * 2) * 10;
+                        final due = _dueCount > 0;
                         return Stack(
-                          children: List.generate(CombHairRules.maxSteps, (i) {
-                            final angle = (i / CombHairRules.maxSteps) *
-                                    math.pi *
-                                    1.2 -
-                                0.3;
-                            final bob = math.sin(
-                                    (_float.value + i * 0.25) * math.pi * 2) *
-                                10;
-                            final x = constraints.maxWidth * 0.5 +
-                                math.cos(angle) * constraints.maxWidth * 0.32 -
-                                (bubbleSize / 2);
-                            final y = constraints.maxHeight * 0.12 +
-                                math.sin(angle) * 50 +
-                                bob;
-                            final finished = _done.contains(i);
-                            return Positioned(
-                              left: x,
-                              top: y,
-                              child: BounceButton(
-                                onPressed: finished || _actionInProgress
-                                    ? null
-                                    : () => _tapBubble(i),
-                                enabled: !finished && !_actionInProgress,
-                                semanticLabel: 'Comb hair bubble ${i + 1}',
-                                child: CombBubble(
-                                  done: finished,
-                                  playing: finished && _actionInProgress,
+                          children: choreBubblesAlongBottom(
+                            count: CombHairRules.maxSteps,
+                            maxWidth: constraints.maxWidth,
+                            bubbleSize: bubbleSize,
+                            bob: bob,
+                            buildAt: (i, left, bottom) {
+                              final finished = _done.contains(i);
+                              final showBadge = due && i == 0 && !finished;
+                              return Positioned(
+                                left: left,
+                                bottom: bottom,
+                                child: BounceButton(
+                                  onPressed: finished || _actionInProgress
+                                      ? null
+                                      : () => _tapBubble(i),
+                                  enabled: !finished && !_actionInProgress,
+                                  semanticLabel: 'Comb hair bubble ${i + 1}',
+                                  child: CombBubble(
+                                    done: finished,
+                                    playing: finished && _actionInProgress,
+                                    highlighted: showBadge,
+                                    badgeCount: showBadge ? _dueCount : 0,
+                                  ),
                                 ),
-                              ),
-                            );
-                          }),
+                              );
+                            },
+                          ),
                         );
                       },
                     );
@@ -356,17 +363,25 @@ class _CombVideoLayer extends StatelessWidget {
 
 /// Soft comb bubble — same glassy float language as feed activity bubbles.
 class CombBubble extends StatelessWidget {
-  const CombBubble({super.key, required this.done, this.playing = false});
+  const CombBubble({
+    super.key,
+    required this.done,
+    this.playing = false,
+    this.highlighted = false,
+    this.badgeCount = 0,
+  });
 
   final bool done;
   final bool playing;
+  final bool highlighted;
+  final int badgeCount;
 
   static const double _size = 84;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedScale(
-      scale: playing ? 1.12 : 1.0,
+      scale: playing ? 1.12 : (highlighted ? 1.06 : 1.0),
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutBack,
       child: SizedBox(
@@ -398,8 +413,10 @@ class CombBubble extends StatelessWidget {
                   stops: const [0.0, 0.55, 1.0],
                 ),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.90),
-                  width: 2.5,
+                  color: highlighted
+                      ? TTColors.ribbonOrange
+                      : Colors.white.withValues(alpha: 0.90),
+                  width: highlighted ? 4 : 2.5,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -449,6 +466,7 @@ class CombBubble extends StatelessWidget {
                   ? TTColors.combWarm.withValues(alpha: 0.95)
                   : TTColors.combDeep,
             ),
+            DueCountBadge(count: badgeCount),
             if (done)
               Positioned(
                 right: -2,

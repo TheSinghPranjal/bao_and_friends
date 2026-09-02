@@ -5,11 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/activity_schedule.dart';
 import '../../models/rewards.dart';
+import '../../services/schedule_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
 import '../../widgets/bounce_button.dart';
+import '../../widgets/due_count_badge.dart';
 import '../../widgets/status_bar.dart';
 import '../drink/drink_water_screen.dart' show RewardPopup;
 
@@ -56,6 +59,7 @@ class _GetDressedScreenState extends State<GetDressedScreen>
 
   _DressPhase _phase = _DressPhase.idle;
   bool _celebrating = false;
+  int _dueCount = 0;
 
   VideoPlayerController? _idleVideo;
   VideoPlayerController? _dressVideo;
@@ -82,6 +86,13 @@ class _GetDressedScreenState extends State<GetDressedScreen>
       duration: _crossfadeDuration,
     );
     unawaited(_initVideos());
+    unawaited(_loadDue());
+  }
+
+  Future<void> _loadDue() async {
+    final due = await ScheduleStore.dueCount(ActivityId.getDressed);
+    if (!mounted) return;
+    setState(() => _dueCount = due);
   }
 
   Future<void> _initVideos() async {
@@ -478,6 +489,11 @@ class _GetDressedScreenState extends State<GetDressedScreen>
                                   done: _dressCompleted,
                                   playing: _phase == _DressPhase.dressing ||
                                       _phase == _DressPhase.dressingEnding,
+                                  highlighted:
+                                      _dueCount > 0 && _phase == _DressPhase.idle,
+                                  badgeCount: _phase == _DressPhase.idle
+                                      ? _dueCount
+                                      : 0,
                                 ),
                               ),
                             ),
@@ -561,6 +577,8 @@ class _StepBubble extends StatelessWidget {
     required this.warm,
     required this.done,
     this.playing = false,
+    this.highlighted = false,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
@@ -570,13 +588,15 @@ class _StepBubble extends StatelessWidget {
   final Color warm;
   final bool done;
   final bool playing;
+  final bool highlighted;
+  final int badgeCount;
 
   static const double _size = 96;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedScale(
-      scale: playing ? 1.12 : 1.0,
+      scale: playing ? 1.12 : (highlighted ? 1.06 : 1.0),
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutBack,
       child: SizedBox(
@@ -608,8 +628,10 @@ class _StepBubble extends StatelessWidget {
                   stops: const [0.0, 0.55, 1.0],
                 ),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.90),
-                  width: 2.5,
+                  color: highlighted
+                      ? TTColors.ribbonOrange
+                      : Colors.white.withValues(alpha: 0.90),
+                  width: highlighted ? 4 : 2.5,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -630,6 +652,7 @@ class _StepBubble extends StatelessWidget {
               size: 38,
               color: done ? warm.withValues(alpha: 0.95) : accent,
             ),
+            DueCountBadge(count: badgeCount),
             if (done)
               Positioned(
                 right: -2,

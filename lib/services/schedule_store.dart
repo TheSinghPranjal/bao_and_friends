@@ -78,6 +78,32 @@ class ScheduleStore {
     );
   }
 
+  /// Missed / still-due slots today for [id] (Play-style badge number).
+  ///
+  /// A past slot counts as due until a completion today at/after that slot.
+  static Future<int> dueCount(ActivityId id, [DateTime? now]) async {
+    if (id == ActivityId.learn || id == ActivityId.wake) return 0;
+    final t = now ?? DateTime.now();
+    final slots = await timesFor(id);
+    if (slots.isEmpty) return 0;
+
+    final minutes = t.hour * 60 + t.minute;
+    final done = await lastCompleted(id);
+    final doneToday = done != null &&
+        done.year == t.year &&
+        done.month == t.month &&
+        done.day == t.day;
+    final doneMinute =
+        doneToday ? done.hour * 60 + done.minute : -1;
+
+    var due = 0;
+    for (final s in slots) {
+      if (s > minutes) continue;
+      if (!doneToday || doneMinute < s) due++;
+    }
+    return due.clamp(0, 99);
+  }
+
   // ---- Window / due math ----
 
   /// Most recent scheduled slot ≤ [now] **today only**.

@@ -49,8 +49,23 @@ class _ChoresScreenState extends State<ChoresScreen> {
     _ChoreItem('School', Icons.school_rounded, Color(0xFF81C784)),
   ];
 
+  /// Schedule id per tray index (null = no due badge).
+  static const _scheduleIds = <ActivityId?>[
+    ActivityId.makeBed,
+    ActivityId.brushTeeth,
+    ActivityId.washFace,
+    ActivityId.bath,
+    null, // comb hair
+    ActivityId.getDressed,
+    ActivityId.wearShoes,
+    null,
+    null,
+    null,
+  ];
+
   final Set<int> _done = {};
   bool _celebrating = false;
+  Map<int, int> _dueByIndex = {};
 
   VideoPlayerController? _idleVideo;
   bool _idleReady = false;
@@ -59,6 +74,17 @@ class _ChoresScreenState extends State<ChoresScreen> {
   void initState() {
     super.initState();
     unawaited(_initVideo());
+    unawaited(_refreshDues());
+  }
+
+  Future<void> _refreshDues() async {
+    final dues = <int, int>{};
+    for (var i = 0; i < _scheduleIds.length; i++) {
+      final id = _scheduleIds[i];
+      dues[i] = id == null ? 0 : await ScheduleStore.dueCount(id);
+    }
+    if (!mounted) return;
+    setState(() => _dueByIndex = dues);
   }
 
   Future<void> _initVideo() async {
@@ -127,6 +153,8 @@ class _ChoresScreenState extends State<ChoresScreen> {
     } else {
       setState(() => _done.add(index));
     }
+
+    await _refreshDues();
 
     if (_done.length >= ChoresRules.choresForFullReward) {
       setState(() => _celebrating = true);
@@ -236,6 +264,8 @@ class _ChoresScreenState extends State<ChoresScreen> {
                       icon: _chores[i].icon,
                       accent: _chores[i].accent,
                       done: _done.contains(i),
+                      badgeCount: _dueByIndex[i] ?? 0,
+                      highlighted: (_dueByIndex[i] ?? 0) > 0,
                       onTap: () => _tapChore(i),
                     ),
                 ],
