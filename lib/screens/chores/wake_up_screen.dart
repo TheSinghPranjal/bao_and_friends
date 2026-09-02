@@ -265,12 +265,11 @@ class _WakeUpScreenState extends State<WakeUpScreen>
                         final bob =
                             math.sin(_float.value * math.pi * 2) * 12;
                         final x = constraints.maxWidth * 0.5 - bubbleSize / 2;
-                        final y = constraints.maxHeight * 0.18 + bob;
                         return Stack(
                           children: [
                             Positioned(
                               left: x,
-                              top: y,
+                              bottom: 48 + bob,
                               child: BounceButton(
                                 onPressed: _waking || _celebrating
                                     ? null

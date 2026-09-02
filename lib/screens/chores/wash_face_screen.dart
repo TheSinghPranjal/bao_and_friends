@@ -5,11 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/activity_schedule.dart';
 import '../../models/rewards.dart';
+import '../../services/schedule_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
 import '../../widgets/bounce_button.dart';
+import '../../widgets/due_count_badge.dart';
 import '../../widgets/status_bar.dart';
 import '../drink/drink_water_screen.dart' show RewardPopup;
 
@@ -35,6 +38,7 @@ class _WashFaceScreenState extends State<WashFaceScreen>
   final Set<int> _done = {};
   bool _celebrating = false;
   bool _actionInProgress = false;
+  int _dueCount = 0;
 
   VideoPlayerController? _idleVideo;
   VideoPlayerController? _washingVideo;
@@ -54,6 +58,13 @@ class _WashFaceScreenState extends State<WashFaceScreen>
       duration: _crossfadeDuration,
     );
     unawaited(_initVideos());
+    unawaited(_loadDue());
+  }
+
+  Future<void> _loadDue() async {
+    final due = await ScheduleStore.dueCount(ActivityId.washFace);
+    if (!mounted) return;
+    setState(() => _dueCount = due);
   }
 
   Future<void> _initVideos() async {
@@ -275,38 +286,36 @@ class _WashFaceScreenState extends State<WashFaceScreen>
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
+                        final bob = math.sin(_float.value * math.pi * 2) * 10;
+                        final due = _dueCount > 0;
                         return Stack(
-                          children: List.generate(WashFaceRules.maxSteps, (i) {
-                            final angle = (i / WashFaceRules.maxSteps) *
-                                    math.pi *
-                                    1.2 -
-                                0.3;
-                            final bob = math.sin(
-                                    (_float.value + i * 0.25) * math.pi * 2) *
-                                10;
-                            final x = constraints.maxWidth * 0.5 +
-                                math.cos(angle) * constraints.maxWidth * 0.32 -
-                                (bubbleSize / 2);
-                            final y = constraints.maxHeight * 0.12 +
-                                math.sin(angle) * 50 +
-                                bob;
-                            final finished = _done.contains(i);
-                            return Positioned(
-                              left: x,
-                              top: y,
-                              child: BounceButton(
-                                onPressed: finished || _actionInProgress
-                                    ? null
-                                    : () => _tapBubble(i),
-                                enabled: !finished && !_actionInProgress,
-                                semanticLabel: 'Wash face bubble ${i + 1}',
-                                child: WashBubble(
-                                  done: finished,
-                                  playing: finished && _actionInProgress,
+                          children: choreBubblesAlongBottom(
+                            count: WashFaceRules.maxSteps,
+                            maxWidth: constraints.maxWidth,
+                            bubbleSize: bubbleSize,
+                            bob: bob,
+                            buildAt: (i, left, bottom) {
+                              final finished = _done.contains(i);
+                              final showBadge = due && i == 0 && !finished;
+                              return Positioned(
+                                left: left,
+                                bottom: bottom,
+                                child: BounceButton(
+                                  onPressed: finished || _actionInProgress
+                                      ? null
+                                      : () => _tapBubble(i),
+                                  enabled: !finished && !_actionInProgress,
+                                  semanticLabel: 'Wash face bubble ${i + 1}',
+                                  child: WashBubble(
+                                    done: finished,
+                                    playing: finished && _actionInProgress,
+                                    highlighted: showBadge,
+                                    badgeCount: showBadge ? _dueCount : 0,
+                                  ),
                                 ),
-                              ),
-                            );
-                          }),
+                              );
+                            },
+                          ),
                         );
                       },
                     );
@@ -356,17 +365,25 @@ class _WashVideoLayer extends StatelessWidget {
 
 /// Soft wash bubble — same glassy float language as feed activity bubbles.
 class WashBubble extends StatelessWidget {
-  const WashBubble({super.key, required this.done, this.playing = false});
+  const WashBubble({
+    super.key,
+    required this.done,
+    this.playing = false,
+    this.highlighted = false,
+    this.badgeCount = 0,
+  });
 
   final bool done;
   final bool playing;
+  final bool highlighted;
+  final int badgeCount;
 
   static const double _size = 84;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedScale(
-      scale: playing ? 1.12 : 1.0,
+      scale: playing ? 1.12 : (highlighted ? 1.06 : 1.0),
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutBack,
       child: SizedBox(
@@ -398,8 +415,10 @@ class WashBubble extends StatelessWidget {
                   stops: const [0.0, 0.55, 1.0],
                 ),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.90),
-                  width: 2.5,
+                  color: highlighted
+                      ? TTColors.ribbonOrange
+                      : Colors.white.withValues(alpha: 0.90),
+                  width: highlighted ? 4 : 2.5,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -449,6 +468,7 @@ class WashBubble extends StatelessWidget {
                   ? TTColors.washWarm.withValues(alpha: 0.95)
                   : TTColors.washDeep,
             ),
+            DueCountBadge(count: badgeCount),
             if (done)
               Positioned(
                 right: -2,
