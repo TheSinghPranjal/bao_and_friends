@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../models/learn_topics.dart';
 import '../../models/rewards.dart';
+import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -143,6 +144,7 @@ class _AlphabetScreenState extends State<AlphabetScreen>
     setState(() => _celebrating = true);
 
     final reward = LearnAlphabetRules.rewardForComplete();
+    await StarsStore.add(reward.stars);
     await Future<void>.delayed(const Duration(milliseconds: 500));
     if (!mounted || _disposed) return;
     await _showReward(reward);
@@ -238,7 +240,6 @@ class _AlphabetScreenState extends State<AlphabetScreen>
             children: [
               TinyStatusBar(
                 showCounters: true,
-                stars: 12 + _index,
                 onSettings: () => context.push('/parent-gate'),
                 leading: TtBackButton(onPressed: () => context.pop(false)),
               ),

@@ -20,6 +20,7 @@ import '../screens/feed/eat_veggies_screen.dart';
 import '../screens/feed/feed_screen.dart';
 import '../screens/learn/alphabet_screen.dart';
 import '../screens/learn/learn_screen.dart';
+import '../screens/learn/numbers_screen.dart';
 import '../screens/play/play_game_screen.dart';
 import '../screens/play/play_screen.dart';
 import '../screens/shared/module_hub_screen.dart';
@@ -57,6 +58,10 @@ GoRouter createAppRouter({bool skipSplash = false}) {
       GoRoute(
         path: '/learn/alphabet',
         builder: (context, state) => const AlphabetScreen(),
+      ),
+      GoRoute(
+        path: '/learn/numbers',
+        builder: (context, state) => const NumbersScreen(),
       ),
       GoRoute(
         path: '/feed',
