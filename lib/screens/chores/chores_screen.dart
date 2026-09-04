@@ -211,8 +211,6 @@ class _ChoresScreenState extends State<ChoresScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final remaining = ChoresRules.maxChores - _done.length;
-
     return Scaffold(
       backgroundColor: const Color(0xFFE8F5E9),
       body: Stack(
@@ -260,13 +258,8 @@ class _ChoresScreenState extends State<ChoresScreen> {
               const SizedBox(height: 8),
               Text(
                 'Help Bao!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
-              ),
-              Text(
-                remaining == 0
-                    ? 'All done — great helper!'
-                    : 'Tap a chore ($remaining left)',
-                style: TTTypography.subtitle(),
+                style: TTTypography.headline(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               const Spacer(),
               ItemTrayBar(

@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../services/music_store.dart';
+import '../../services/premium_store.dart';
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
@@ -121,7 +125,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                     boxShadow: TTShadows.soft,
                   ),
                   child: Text(
-                    _page == _pages.length - 1 ? 'Meet the Family' : 'Next',
+                    _page >= _pages.length - 1 ? 'Meet the Family' : 'Next',
                     style: TTTypography.button(),
                   ),
                 ),
@@ -134,34 +138,51 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   }
 }
 
-class SettingsScreen extends StatelessWidget {
+/// Parent Settings — music, premium testing toggle, activity timers.
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return _SimpleListScreen(
-      title: 'Settings',
-      items: [
-        ('Sound & Music', Icons.volume_up_rounded, '/sound'),
-        ('Activity Timers', Icons.timer_rounded, '/activity-timers'),
-        ('Profile', Icons.person_rounded, '/profile'),
-        ('Calendar / Streak', Icons.calendar_today_rounded, '/calendar'),
-        ('Parent Dashboard', Icons.dashboard_rounded, '/parent-dashboard'),
-        ('Help', Icons.help_outline_rounded, '/help'),
-        ('Sticker Book', Icons.collections_bookmark_rounded, '/stickers'),
-        ('Room Customize', Icons.chair_rounded, '/room'),
-        ('Wardrobe', Icons.checkroom_rounded, '/wardrobe'),
-        ('Achievements', Icons.emoji_events_rounded, '/achievements'),
-      ],
-    );
-  }
+  State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SimpleListScreen extends StatelessWidget {
-  const _SimpleListScreen({required this.title, required this.items});
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _premiumUnlocked = false;
+  bool _musicOn = true;
+  bool _loaded = false;
+  Map<ActivitySection, int> _remaining = {};
 
-  final String title;
-  final List<(String, IconData, String)> items;
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    final unlocked = await PremiumStore.isPremiumUnlocked();
+    final music = await MusicStore.isEnabled();
+    final remaining = await PremiumStore.remainingBySection();
+    if (!mounted) return;
+    setState(() {
+      _premiumUnlocked = unlocked;
+      _musicOn = music;
+      _remaining = remaining;
+      _loaded = true;
+    });
+  }
+
+  Future<void> _setPremium(bool value) async {
+    setState(() => _premiumUnlocked = value);
+    await PremiumStore.setPremiumUnlocked(value);
+    final remaining = await PremiumStore.remainingBySection();
+    if (!mounted) return;
+    setState(() => _remaining = remaining);
+  }
+
+  Future<void> _setMusic(bool value) async {
+    setState(() => _musicOn = value);
+    await MusicStore.setEnabled(value);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -184,47 +205,218 @@ class _SimpleListScreen extends StatelessWidget {
                     },
                   ),
                   const SizedBox(width: 12),
-                  Text(title, style: TTTypography.headline()),
+                  Expanded(
+                    child: Text(
+                      'Parent Settings',
+                      style: TTTypography.headline(),
+                    ),
+                  ),
                 ],
               ),
             ),
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: items.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
-                itemBuilder: (context, i) {
-                  final item = items[i];
-                  return BounceButton(
-                    onPressed: () => context.push(item.$3),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                children: [
+                  _SettingsToggleCard(
+                    icon: Icons.music_note_rounded,
+                    title: 'Music',
+                    subtitle: _musicOn
+                        ? 'On — background music enabled'
+                        : 'Off — music muted',
+                    loaded: _loaded,
+                    value: _musicOn,
+                    onChanged: _setMusic,
+                    active: _musicOn,
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsToggleCard(
+                    icon: Icons.workspace_premium_rounded,
+                    title: 'Premium subscription',
+                    subtitle: _premiumUnlocked
+                        ? 'On — unlimited activities (testing)'
+                        : 'Off — ${PremiumStore.maxTapsPerSection} taps / section / day',
+                    loaded: _loaded,
+                    value: _premiumUnlocked,
+                    onChanged: _setPremium,
+                    active: _premiumUnlocked,
+                  ),
+                  const SizedBox(height: 12),
+                  BounceButton(
+                    onPressed: () => context.push('/activity-timers'),
                     child: Container(
+                      width: double.infinity,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
+                        horizontal: 18,
                         vertical: 18,
                       ),
                       decoration: BoxDecoration(
                         color: TTColors.creamWhite,
                         borderRadius:
-                            BorderRadius.circular(TTSpacing.radiusMd),
+                            BorderRadius.circular(TTSpacing.radiusLg),
                         boxShadow: TTShadows.soft,
                       ),
                       child: Row(
                         children: [
-                          Icon(item.$2, color: TTColors.skyDeep),
+                          const Icon(
+                            Icons.timer_rounded,
+                            color: TTColors.skyDeep,
+                            size: 28,
+                          ),
                           const SizedBox(width: 14),
                           Expanded(
-                            child: Text(item.$1, style: TTTypography.body()),
+                            child: Text(
+                              'Activity Timers',
+                              style: TTTypography.title(
+                                color: TTColors.darkBrown,
+                              ),
+                            ),
                           ),
-                          const Icon(Icons.chevron_right_rounded),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: TTColors.softBrown,
+                          ),
                         ],
                       ),
                     ),
-                  );
-                },
+                  ),
+                  if (_loaded) ...[
+                    const SizedBox(height: 20),
+                    _RemainingTapsCard(remaining: _remaining),
+                  ],
+                ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SettingsToggleCard extends StatelessWidget {
+  const _SettingsToggleCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.loaded,
+    required this.value,
+    required this.onChanged,
+    required this.active,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool loaded;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 16, 12, 16),
+      decoration: BoxDecoration(
+        color: TTColors.creamWhite,
+        borderRadius: BorderRadius.circular(TTSpacing.radiusLg),
+        border: Border.all(
+          color: active ? TTColors.golden : TTColors.peachDeep,
+          width: 2,
+        ),
+        boxShadow: TTShadows.soft,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: active ? TTColors.goldenOutline : TTColors.skyDeep,
+            size: 32,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TTTypography.title(color: TTColors.darkBrown),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TTTypography.caption(color: TTColors.softBrown),
+                ),
+              ],
+            ),
+          ),
+          if (!loaded)
+            const SizedBox(
+              width: 48,
+              height: 28,
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else
+            Switch.adaptive(
+              value: value,
+              activeTrackColor: TTColors.golden,
+              onChanged: onChanged,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RemainingTapsCard extends StatelessWidget {
+  const _RemainingTapsCard({required this.remaining});
+
+  final Map<ActivitySection, int> remaining;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: TTColors.creamWhite,
+        borderRadius: BorderRadius.circular(TTSpacing.radiusLg),
+        boxShadow: TTShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Taps left today',
+            style: TTTypography.title(color: TTColors.darkBrown),
+          ),
+          const SizedBox(height: 8),
+          for (final s in ActivitySection.values)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      s.label,
+                      style: TTTypography.body(color: TTColors.darkBrown),
+                    ),
+                  ),
+                  Text(
+                    '${remaining[s] ?? PremiumStore.maxTapsPerSection}',
+                    style: TTTypography.title(color: TTColors.bambooDeep),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -200,7 +200,6 @@ class _EatBananaScreenState extends State<EatBananaScreen>
 
   @override
   Widget build(BuildContext context) {
-    final remaining = EatBananaRules.maxBananas - _eaten.length;
     const bubbleSize = 84.0;
 
     return Scaffold(
@@ -264,13 +263,8 @@ class _EatBananaScreenState extends State<EatBananaScreen>
               const SizedBox(height: 8),
               Text(
                 'Banana with Bao!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
-              ),
-              Text(
-                remaining == 0
-                    ? 'All done — so yummy!'
-                    : 'Tap the banana bubbles ($remaining left)',
-                style: TTTypography.subtitle(),
+                style: TTTypography.headline(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(

@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import '../../models/activity_schedule.dart';
 import '../../models/character.dart';
 import '../../models/character_bg_videos.dart';
+import '../../services/premium_store.dart';
 import '../../services/schedule_store.dart';
 import '../../services/sleep_store.dart';
 import '../../services/stars_store.dart';
@@ -16,6 +17,7 @@ import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
 import '../../widgets/bao_face.dart';
 import '../../widgets/bounce_button.dart';
+import '../../widgets/premium_dialogs.dart';
 import '../../widgets/status_bar.dart';
 
 /// Character Home — looping bedroom video (Bao) + frosted bottom activity sheet.
@@ -295,6 +297,20 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       return;
     }
 
+    if (PremiumStore.isGatedRoute(item.route)) {
+      final section = ActivitySection.fromRoute(item.route)!;
+      final allowed = await PremiumStore.tryConsumeActivityTap(section);
+      if (!mounted) return;
+      if (!allowed) {
+        await showOutOfTapsDialog(context, section: section);
+        if (!mounted) return;
+        setState(() {
+          _selectedRoute = _isSleeping ? '/wake-up' : null;
+        });
+        return;
+      }
+    }
+
     await context.push('${item.route}?character=${character.id.name}');
     if (!mounted) return;
     await _refreshTimers();
@@ -336,18 +352,28 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
               ),
               if (comingSoon)
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
                   child: Text(
-                    '${character.name} is Coming Soon!',
-                    style: TTTypography.headline(),
+                    '${character.name} Coming Soon',
+                    textAlign: TextAlign.center,
+                    style: TTTypography.headline(color: TTColors.darkBrown)
+                        .copyWith(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 30,
+                    ),
                   ),
                 )
-              else if (_isBao && _sleepLoaded && _isSleeping)
+              else if (_isBao && _sleepLoaded)
                 Padding(
-                  padding: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
                   child: Text(
-                    'Bao is sleeping — tap to wake up!',
-                    style: TTTypography.subtitle(color: TTColors.darkBrown),
+                    _isSleeping ? 'Bao is sleeping' : 'Hello Bao!',
+                    textAlign: TextAlign.center,
+                    style: TTTypography.headline(color: TTColors.darkBrown)
+                        .copyWith(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 30,
+                    ),
                   ),
                 ),
               Expanded(
@@ -379,10 +405,14 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
                                     ),
                             ),
                             const SizedBox(height: 8),
-                            Text(character.name, style: TTTypography.title()),
                             Text(
-                              'Ready to play!',
-                              style: TTTypography.subtitle(),
+                              character.name,
+                              style: TTTypography.headline(
+                                color: TTColors.darkBrown,
+                              ).copyWith(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 30,
+                              ),
                             ),
                           ],
                         ),

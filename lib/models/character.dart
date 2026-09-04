@@ -39,7 +39,7 @@ const familyCharacters = <FamilyCharacter>[
     name: 'Poko',
     subtitle: 'Baby Panda • Let\'s Sing & Draw!',
     cardColorValue: 0xFFF5B8C8,
-    unlockState: CharacterUnlockState.unlocked,
+    unlockState: CharacterUnlockState.comingSoon,
     ageLabel: '0–2',
     role: 'Baby Panda',
   ),

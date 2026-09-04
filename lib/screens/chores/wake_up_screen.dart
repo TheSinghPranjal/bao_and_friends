@@ -248,14 +248,9 @@ class _WakeUpScreenState extends State<WakeUpScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                _waking ? 'Good morning, Bao!' : 'Bao is sleeping…',
-                style: TTTypography.headline(color: TTColors.creamWhite),
-              ),
-              Text(
-                _waking
-                    ? 'Yawn… stretching… awake!'
-                    : 'Tap the Wake Up bubble',
-                style: TTTypography.subtitle(color: TTColors.creamWhite),
+                _waking ? 'Good morning Bao!' : 'Bao is sleeping',
+                style: TTTypography.headline(color: TTColors.creamWhite)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(

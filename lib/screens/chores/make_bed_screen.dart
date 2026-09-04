@@ -232,13 +232,6 @@ class _MakeBedScreenState extends State<MakeBedScreen>
     );
   }
 
-  String get _subtitle {
-    if (_celebrating) return 'Nice helping!';
-    if (_dueCount > 0) {
-      return 'Due ×$_dueCount — tap for ${ChoreDueTapRules.starsDue}★';
-    }
-    return 'Tap anytime for ${ChoreDueTapRules.starsBonus}★';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -301,10 +294,10 @@ class _MakeBedScreenState extends State<MakeBedScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Make the Bed!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
+                'Make the bed',
+                style: TTTypography.headline(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
-              Text(_subtitle, style: TTTypography.subtitle()),
               Expanded(
                 child: AnimatedBuilder(
                   animation: _float,

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/activity_schedule.dart';
+import '../../models/feed_foods.dart';
 import '../../models/play_games.dart';
+import '../../services/feed_due_store.dart';
 import '../../services/play_due_store.dart';
 import '../../services/schedule_store.dart';
 import '../../theme/tt_colors.dart';
@@ -12,7 +14,7 @@ import '../../theme/tt_typography.dart';
 import '../../widgets/back_button_circle.dart';
 import '../../widgets/bounce_button.dart';
 
-/// Parent settings — edit reset times for Drink, Play games, Feed, Sleep, Chores.
+/// Parent settings — edit reset times for Drink, Play games, Feed foods, Sleep, Chores.
 class ActivityTimersSettingsScreen extends StatefulWidget {
   const ActivityTimersSettingsScreen({super.key});
 
@@ -25,6 +27,7 @@ class _ActivityTimersSettingsScreenState
     extends State<ActivityTimersSettingsScreen> {
   final Map<ActivityId, List<MinuteOfDay>> _times = {};
   final Map<String, List<MinuteOfDay>> _playTimes = {};
+  final Map<String, List<MinuteOfDay>> _feedTimes = {};
   bool _loading = true;
 
   @override
@@ -36,12 +39,16 @@ class _ActivityTimersSettingsScreenState
   Future<void> _load() async {
     final map = <ActivityId, List<MinuteOfDay>>{};
     for (final id in DefaultSchedules.editable) {
-      if (id == ActivityId.play) continue; // per-game below
+      if (id == ActivityId.play || id == ActivityId.feed) continue;
       map[id] = await ScheduleStore.timesFor(id);
     }
     final play = <String, List<MinuteOfDay>>{};
     for (final game in PlayGames.all) {
       play[game.id] = await PlayDueStore.timesFor(game.id);
+    }
+    final feed = <String, List<MinuteOfDay>>{};
+    for (final food in FeedFoods.all) {
+      feed[food.id] = await FeedDueStore.timesFor(food.id);
     }
     if (!mounted) return;
     setState(() {
@@ -51,6 +58,9 @@ class _ActivityTimersSettingsScreenState
       _playTimes
         ..clear()
         ..addAll(play);
+      _feedTimes
+        ..clear()
+        ..addAll(feed);
       _loading = false;
     });
   }
@@ -152,10 +162,55 @@ class _ActivityTimersSettingsScreenState
     setState(() => _playTimes[gameId] = restored);
   }
 
+  Future<void> _pickAddFeed(String foodId, String label) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 6, minute: 0),
+      helpText: 'Add time for $label',
+    );
+    if (picked == null || !mounted) return;
+    final next = [...?_feedTimes[foodId], minuteOfDay(picked)]..sort();
+    await FeedDueStore.setTimes(foodId, next);
+    setState(() => _feedTimes[foodId] = next);
+  }
+
+  Future<void> _editFeed(String foodId, String label, int index) async {
+    final current = _feedTimes[foodId]![index];
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: timeFromMinutes(current),
+      helpText: 'Edit time for $label',
+    );
+    if (picked == null || !mounted) return;
+    final next = [..._feedTimes[foodId]!];
+    next[index] = minuteOfDay(picked);
+    next.sort();
+    await FeedDueStore.setTimes(foodId, next);
+    setState(() => _feedTimes[foodId] = next);
+  }
+
+  Future<void> _removeFeed(String foodId, int index) async {
+    final next = [..._feedTimes[foodId]!]..removeAt(index);
+    if (next.isEmpty) {
+      await FeedDueStore.resetTimes(foodId);
+      final restored = await FeedDueStore.timesFor(foodId);
+      setState(() => _feedTimes[foodId] = restored);
+      return;
+    }
+    await FeedDueStore.setTimes(foodId, next);
+    setState(() => _feedTimes[foodId] = next);
+  }
+
+  Future<void> _resetFeed(String foodId) async {
+    await FeedDueStore.resetTimes(foodId);
+    final restored = await FeedDueStore.timesFor(foodId);
+    setState(() => _feedTimes[foodId] = restored);
+  }
+
   @override
   Widget build(BuildContext context) {
     final habitIds = DefaultSchedules.editable
-        .where((id) => id != ActivityId.play)
+        .where((id) => id != ActivityId.play && id != ActivityId.feed)
         .toList();
 
     return Scaffold(
@@ -182,7 +237,8 @@ class _ActivityTimersSettingsScreenState
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                'Set when Bao gets thirsty, hungry, wants to play, sleeps, and does chores. Play games use due badges (missed slots today).',
+                'Set when Bao drinks, plays, eats, sleeps, and does chores. '
+                'Play & Feed use due badges (missed slots today).',
                 style: TTTypography.subtitle(),
               ),
             ),
@@ -234,6 +290,33 @@ class _ActivityTimersSettingsScreenState
                             onRemove: (i) =>
                                 unawaited(_removePlay(game.id, i)),
                             onReset: () => unawaited(_resetPlay(game.id)),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        const SizedBox(height: 8),
+                        Text('Feed foods', style: TTTypography.title()),
+                        const SizedBox(height: 4),
+                        Text(
+                          '4× each day (6am–10pm), staggered per food. Badge = missed slots.',
+                          style: TTTypography.caption(),
+                        ),
+                        const SizedBox(height: 8),
+                        for (final food in FeedFoods.all) ...[
+                          _ActivityTimesCard(
+                            title: food.label,
+                            subtitle: 'Feed',
+                            icon: food.icon,
+                            accent: food.accent,
+                            times: _feedTimes[food.id] ?? const [],
+                            onAdd: () => unawaited(
+                              _pickAddFeed(food.id, food.label),
+                            ),
+                            onEdit: (i) => unawaited(
+                              _editFeed(food.id, food.label, i),
+                            ),
+                            onRemove: (i) =>
+                                unawaited(_removeFeed(food.id, i)),
+                            onReset: () => unawaited(_resetFeed(food.id)),
                           ),
                           const SizedBox(height: 12),
                         ],

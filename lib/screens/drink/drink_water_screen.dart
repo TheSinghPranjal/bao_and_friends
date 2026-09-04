@@ -203,7 +203,6 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
 
   @override
   Widget build(BuildContext context) {
-    final remaining = DrinkWaterRules.maxGlasses - _drunk.length;
     // Bubble is 84x84 now (was 80x100) — keep centering offsets in sync
     // with WaterGlass's outer size below.
     const bubbleSize = 84.0;
@@ -269,13 +268,8 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
               const SizedBox(height: 8),
               Text(
                 'Sip with Bao!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
-              ),
-              Text(
-                remaining == 0
-                    ? 'All done — so refreshing!'
-                    : 'Tap the happy glasses ($remaining left)',
-                style: TTTypography.subtitle(),
+                style: TTTypography.headline(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(

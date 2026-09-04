@@ -124,8 +124,8 @@ abstract final class DefaultSchedules {
   /// Play: 8am, 10am, 4pm, 6pm, 8pm
   static const play = <MinuteOfDay>[8 * 60, 10 * 60, 16 * 60, 18 * 60, 20 * 60];
 
-  /// Feed: 8am, 10am, 2pm, 4pm, 8pm
-  static const feed = <MinuteOfDay>[8 * 60, 10 * 60, 14 * 60, 16 * 60, 20 * 60];
+  /// Feed: 6am, 11am, 4pm, 9pm (hub ring; per-food times in FeedDueStore)
+  static const feed = <MinuteOfDay>[6 * 60, 11 * 60, 16 * 60, 21 * 60];
 
   /// Make bed: 6:01am, 3:01pm, 4:29pm, 9:59pm (4 times / day)
   static const makeBed = <MinuteOfDay>[

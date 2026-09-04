@@ -295,16 +295,6 @@ class _WearShoesScreenState extends State<WearShoesScreen>
     super.dispose();
   }
 
-  String get _subtitle => switch (_phase) {
-        _ShoePhase.idle => 'Tap the shoes to put them on!',
-        _ShoePhase.wearing ||
-        _ShoePhase.wearingEnding =>
-          'Bao is putting on shoes…',
-        _ShoePhase.waitBag => 'Great! Now tap the bag!',
-        _ShoePhase.takingBag => 'Grabbing the bag…',
-        _ShoePhase.done => 'All ready — shoes and bag!',
-      };
-
   bool get _showBagBubble =>
       _phase == _ShoePhase.wearingEnding ||
       _phase == _ShoePhase.waitBag ||
@@ -446,9 +436,9 @@ class _WearShoesScreenState extends State<WearShoesScreen>
               const SizedBox(height: 8),
               Text(
                 'Wear Shoes!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
+                style: TTTypography.headline(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
-              Text(_subtitle, style: TTTypography.subtitle()),
               Expanded(
                 child: AnimatedBuilder(
                   animation: _float,

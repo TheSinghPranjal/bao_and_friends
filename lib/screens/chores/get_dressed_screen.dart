@@ -296,16 +296,6 @@ class _GetDressedScreenState extends State<GetDressedScreen>
     super.dispose();
   }
 
-  String get _subtitle => switch (_phase) {
-        _DressPhase.idle => 'Tap the clothes to get Bao dressed!',
-        _DressPhase.dressing ||
-        _DressPhase.dressingEnding =>
-          'Bao is getting dressed…',
-        _DressPhase.waitTie => 'Nice! Now tap the tie!',
-        _DressPhase.tying => 'Putting on the tie…',
-        _DressPhase.done => 'All dressed — looking sharp!',
-      };
-
   bool get _showTieBubble =>
       _phase == _DressPhase.dressingEnding ||
       _phase == _DressPhase.waitTie ||
@@ -449,9 +439,9 @@ class _GetDressedScreenState extends State<GetDressedScreen>
               const SizedBox(height: 8),
               Text(
                 'Get Dressed!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
+                style: TTTypography.headline(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
-              Text(_subtitle, style: TTTypography.subtitle()),
               Expanded(
                 child: AnimatedBuilder(
                   animation: _float,

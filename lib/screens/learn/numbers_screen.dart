@@ -198,8 +198,6 @@ class _NumbersScreenState extends State<NumbersScreen>
 
   @override
   Widget build(BuildContext context) {
-    final label = NumberVideos.labels[_index];
-    final remaining = NumberVideos.segments.length - _index;
     final isLast = _index >= NumberVideos.segments.length - 1;
 
     return Scaffold(
@@ -246,13 +244,8 @@ class _NumbersScreenState extends State<NumbersScreen>
               const SizedBox(height: 8),
               Text(
                 'Numbers!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
-              ),
-              Text(
-                _celebrating
-                    ? 'All done — great job!'
-                    : 'Numbers $label · ${isLast ? 'Last one!' : '$remaining left'}',
-                style: TTTypography.subtitle(),
+                style: TTTypography.headline(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(

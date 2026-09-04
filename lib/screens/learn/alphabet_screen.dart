@@ -198,8 +198,6 @@ class _AlphabetScreenState extends State<AlphabetScreen>
 
   @override
   Widget build(BuildContext context) {
-    final label = AlphabetVideos.labels[_index];
-    final remaining = AlphabetVideos.segments.length - _index;
     final isLast = _index >= AlphabetVideos.segments.length - 1;
 
     return Scaffold(
@@ -246,13 +244,8 @@ class _AlphabetScreenState extends State<AlphabetScreen>
               const SizedBox(height: 8),
               Text(
                 'Alphabet!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
-              ),
-              Text(
-                _celebrating
-                    ? 'All done — great job!'
-                    : 'Letters $label · ${isLast ? 'Last one!' : '$remaining left'}',
-                style: TTTypography.subtitle(),
+                style: TTTypography.headline(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(

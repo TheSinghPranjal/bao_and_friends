@@ -12,17 +12,14 @@ import '../screens/chores/wash_face_screen.dart';
 import '../screens/chores/wake_up_screen.dart';
 import '../screens/chores/wear_shoes_screen.dart';
 import '../screens/drink/drink_water_screen.dart';
-import '../screens/feed/drink_milk_screen.dart';
-import '../screens/feed/eat_apple_screen.dart';
-import '../screens/feed/eat_banana_screen.dart';
-import '../screens/feed/eat_sandwich_screen.dart';
-import '../screens/feed/eat_veggies_screen.dart';
+import '../screens/feed/eat_food_screen.dart';
 import '../screens/feed/feed_screen.dart';
 import '../screens/learn/alphabet_screen.dart';
 import '../screens/learn/learn_screen.dart';
 import '../screens/learn/numbers_screen.dart';
 import '../screens/play/play_game_screen.dart';
 import '../screens/play/play_screen.dart';
+import '../screens/premium/premium_screen.dart';
 import '../screens/shared/module_hub_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/system/activity_timers_settings_screen.dart';
@@ -68,24 +65,35 @@ GoRouter createAppRouter({bool skipSplash = false}) {
         builder: (context, state) => const FeedScreen(),
       ),
       GoRoute(
+        path: '/eat-food/:foodId',
+        builder: (context, state) => EatFoodScreen(
+          foodId: state.pathParameters['foodId'] ?? 'apple',
+        ),
+      ),
+      // Legacy feed deep-links → unified eat screen
+      GoRoute(
         path: '/drink-milk',
-        builder: (context, state) => const DrinkMilkScreen(),
+        builder: (context, state) => const EatFoodScreen(foodId: 'milk'),
       ),
       GoRoute(
         path: '/eat-apple',
-        builder: (context, state) => const EatAppleScreen(),
+        builder: (context, state) => const EatFoodScreen(foodId: 'apple'),
       ),
       GoRoute(
         path: '/eat-banana',
-        builder: (context, state) => const EatBananaScreen(),
+        builder: (context, state) => const EatFoodScreen(foodId: 'banana'),
       ),
       GoRoute(
         path: '/eat-veggies',
-        builder: (context, state) => const EatVeggiesScreen(),
+        builder: (context, state) => const EatFoodScreen(foodId: 'veggies'),
       ),
       GoRoute(
         path: '/eat-sandwich',
-        builder: (context, state) => const EatSandwichScreen(),
+        builder: (context, state) => const EatFoodScreen(foodId: 'sandwich'),
+      ),
+      GoRoute(
+        path: '/eat-rice',
+        builder: (context, state) => const EatFoodScreen(foodId: 'rice'),
       ),
       GoRoute(
         path: '/play',
@@ -151,6 +159,14 @@ GoRouter createAppRouter({bool skipSplash = false}) {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/premium',
+        builder: (context, state) {
+          final fromSettings =
+              state.uri.queryParameters['from'] == 'settings';
+          return PremiumScreen(fromSettings: fromSettings);
+        },
       ),
       GoRoute(
         path: '/activity-timers',

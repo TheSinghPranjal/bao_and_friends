@@ -231,13 +231,6 @@ class _WashFaceScreenState extends State<WashFaceScreen>
     );
   }
 
-  String get _subtitle {
-    if (_celebrating) return 'Nice washing!';
-    if (_dueCount > 0) {
-      return 'Due ×$_dueCount — tap for ${ChoreDueTapRules.starsDue}★';
-    }
-    return 'Tap anytime for ${ChoreDueTapRules.starsBonus}★';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -297,10 +290,10 @@ class _WashFaceScreenState extends State<WashFaceScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Wash Face!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
+                'Wash face',
+                style: TTTypography.headline(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
-              Text(_subtitle, style: TTTypography.subtitle()),
               Expanded(
                 child: AnimatedBuilder(
                   animation: _float,

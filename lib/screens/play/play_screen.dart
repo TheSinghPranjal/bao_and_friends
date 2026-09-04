@@ -95,8 +95,6 @@ class _PlayScreenState extends State<PlayScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final anyDue = _dueByGame.values.any((c) => c > 0);
-
     return Scaffold(
       backgroundColor: TTColors.goldenGlow,
       body: Stack(
@@ -144,13 +142,8 @@ class _PlayScreenState extends State<PlayScreen> {
               const SizedBox(height: 8),
               Text(
                 'Play with Bao!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
-              ),
-              Text(
-                anyDue
-                    ? 'Something is due — tap a glowing game!'
-                    : 'Pick a game anytime for bonus stars',
-                style: TTTypography.subtitle(),
+                style: TTTypography.headline(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               const Spacer(),
               ItemTrayBar(

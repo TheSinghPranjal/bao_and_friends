@@ -4,7 +4,6 @@ import 'package:video_player/video_player.dart';
 
 import '../../theme/tt_colors.dart';
 import '../../theme/tt_typography.dart';
-import '../../widgets/status_bar.dart';
 
 /// Screen 1 — Splash.
 /// Full-screen looping background video (unblurred, unfiltered) +
@@ -112,9 +111,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final logoWidth = screenWidth * 0.7;
-
     return Scaffold(
       backgroundColor: TTColors.peachSoft,
       body: AnimatedBuilder(
@@ -140,40 +136,61 @@ class _SplashScreenState extends State<SplashScreen>
                   padding: const EdgeInsets.symmetric(
                     horizontal: TTSpacing.safe,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 8),
-                      // ---- TOP: LOGO ----
-                      Transform.scale(
-                        scale: _logoScale.value * (1 + bloom * 0.08),
-                        child: Opacity(
-                          opacity: (1 - bloom).clamp(0.0, 1.0),
-                          child: Semantics(
-                            label: 'Tiny Think – Learning Together',
-                            image: true,
-                            child: Image.asset(
-                              _logoAsset,
-                              width: logoWidth,
-                              fit: BoxFit.contain,
-                              filterQuality: FilterQuality.high,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Cap by width and height so iPad / landscape can't
+                      // overflow (70% of a wide screen is too tall otherwise).
+                      final logoMaxW = constraints.maxWidth * 0.7;
+                      final logoMaxH = constraints.maxHeight * 0.42;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 8),
+                          // ---- TOP: LOGO ----
+                          Flexible(
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: Transform.scale(
+                                scale:
+                                    _logoScale.value * (1 + bloom * 0.08),
+                                child: Opacity(
+                                  opacity: (1 - bloom).clamp(0.0, 1.0),
+                                  child: Semantics(
+                                    label:
+                                        'Tiny Think – Learning Together',
+                                    image: true,
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth: logoMaxW,
+                                        maxHeight: logoMaxH,
+                                      ),
+                                      child: Image.asset(
+                                        _logoAsset,
+                                        fit: BoxFit.contain,
+                                        filterQuality: FilterQuality.high,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
 
-                      // ---- MIDDLE: transparent, video shows through ----
-                      const Spacer(),
+                          // ---- MIDDLE: transparent, video shows through ----
+                          const Spacer(),
 
-                      // ---- BOTTOM: "Loading..." + progress bar ----
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 28),
-                        child: Opacity(
-                          opacity: _loaderFade.value * (1 - bloom),
-                          child: const _LoadingIndicator(),
-                        ),
-                      ),
-                    ],
+                          // ---- BOTTOM: "Loading..." + progress bar ----
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 28),
+                            child: Opacity(
+                              opacity: _loaderFade.value * (1 - bloom),
+                              child: const _LoadingIndicator(),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),

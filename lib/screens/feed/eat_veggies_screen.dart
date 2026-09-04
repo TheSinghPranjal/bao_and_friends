@@ -199,7 +199,6 @@ class _EatVeggiesScreenState extends State<EatVeggiesScreen>
 
   @override
   Widget build(BuildContext context) {
-    final remaining = EatVeggiesRules.maxVeggies - _eaten.length;
     const bubbleSize = 84.0;
 
     return Scaffold(
@@ -262,13 +261,8 @@ class _EatVeggiesScreenState extends State<EatVeggiesScreen>
               const SizedBox(height: 8),
               Text(
                 'Veggies with Bao!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
-              ),
-              Text(
-                remaining == 0
-                    ? 'All done — so healthy!'
-                    : 'Tap the veggie bubbles ($remaining left)',
-                style: TTTypography.subtitle(),
+                style: TTTypography.headline(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(

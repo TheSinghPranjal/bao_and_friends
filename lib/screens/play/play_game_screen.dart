@@ -309,13 +309,8 @@ class _PlayGameScreenState extends State<PlayGameScreen>
               const SizedBox(height: 8),
               Text(
                 '${_game.label} with Bao!',
-                style: TTTypography.headline(color: TTColors.darkBrown),
-              ),
-              Text(
-                due
-                    ? 'Due ×$_dueCount — tap once to clear one (+${PlayDueStore.starsDue}★)'
-                    : 'Tap anytime for +${PlayDueStore.starsBonus} bonus stars',
-                style: TTTypography.subtitle(),
+                style: TTTypography.headline(color: TTColors.darkBrown)
+                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
