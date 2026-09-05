@@ -20,6 +20,7 @@ import '../drink/drink_water_screen.dart' show RewardPopup;
 class AlphabetScreen extends StatefulWidget {
   const AlphabetScreen({super.key});
 
+
   @override
   State<AlphabetScreen> createState() => _AlphabetScreenState();
 }
@@ -31,6 +32,7 @@ class _AlphabetScreenState extends State<AlphabetScreen>
   bool _celebrating = false;
   bool _advancing = false;
   bool _disposed = false;
+
 
   VideoPlayerController? _video;
   bool _ready = false;
