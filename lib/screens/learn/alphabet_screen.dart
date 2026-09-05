@@ -48,6 +48,7 @@ class _AlphabetScreenState extends State<AlphabetScreen>
     unawaited(_loadSegment(0));
   }
 
+
   Future<void> _disposeController(VideoPlayerController? controller) async {
     if (controller == null) return;
     try {
@@ -55,6 +56,7 @@ class _AlphabetScreenState extends State<AlphabetScreen>
     } catch (_) {}
     await controller.dispose();
   }
+
 
   Future<void> _loadSegment(int index) async {
     final prev = _video;
