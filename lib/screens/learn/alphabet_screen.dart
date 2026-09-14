@@ -60,6 +60,7 @@ class _AlphabetScreenState extends State<AlphabetScreen>
   }
 
 
+
   Future<void> _loadSegment(int index) async {
     final prev = _video;
     final prevListener = _listener;
