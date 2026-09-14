@@ -52,6 +52,7 @@ class FeedHubScreen extends StatelessWidget {
     HubItem('Fruit Bowl', Icons.food_bank_rounded),
   ];
 
+
   @override
   Widget build(BuildContext context) {
     return const ModuleHubScreen(
