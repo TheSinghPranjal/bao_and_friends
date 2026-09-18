@@ -36,6 +36,11 @@ class _PlayGameScreenState extends State<PlayGameScreen>
   late final PlayGameSpec _game;
   late final AnimationController _float;
   late final AnimationController _crossfade;
+  late final AnimationController _entrance;
+  late final AnimationController _orbit;
+  late final AnimationController _burst;
+  final math.Random _rng = math.Random();
+  List<_BurstParticle> _burstParticles = const [];
   bool _actionInProgress = false;
   int _dueCount = 0;
 
@@ -58,8 +63,33 @@ class _PlayGameScreenState extends State<PlayGameScreen>
       vsync: this,
       duration: _crossfadeDuration,
     );
+    _entrance = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 520),
+    )..forward();
+    _orbit = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat();
+    _burst = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
     unawaited(_initVideos());
     unawaited(_refreshMeta());
+  }
+
+  void _spawnBurst() {
+    _burstParticles = List.generate(10, (i) {
+      final angle = (i / 10) * math.pi * 2 + _rng.nextDouble() * 0.4;
+      return _BurstParticle(
+        angle: angle,
+        distance: 46 + _rng.nextDouble() * 42,
+        size: 5 + _rng.nextDouble() * 6,
+        isStar: _rng.nextBool(),
+      );
+    });
+    _burst.forward(from: 0);
   }
 
   Future<void> _refreshMeta() async {
@@ -178,6 +208,9 @@ class _PlayGameScreenState extends State<PlayGameScreen>
     }
     _float.dispose();
     _crossfade.dispose();
+    _entrance.dispose();
+    _orbit.dispose();
+    _burst.dispose();
     _idleVideo?.dispose();
     _actionVideo?.dispose();
     super.dispose();
@@ -185,6 +218,8 @@ class _PlayGameScreenState extends State<PlayGameScreen>
 
   Future<void> _tapBubble() async {
     if (_actionInProgress) return;
+
+    _spawnBurst();
 
     if (_game.hasVideos) {
       await _playActionAnimation();
@@ -299,6 +334,21 @@ class _PlayGameScreenState extends State<PlayGameScreen>
               ),
             ),
           ),
+          IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    _game.accent.withValues(alpha: 0.22),
+                  ],
+                  stops: const [0.72, 1.0],
+                ),
+              ),
+            ),
+          ),
           Column(
             children: [
               TinyStatusBar(
@@ -307,44 +357,140 @@ class _PlayGameScreenState extends State<PlayGameScreen>
                 leading: TtBackButton(onPressed: () => context.pop(false)),
               ),
               const SizedBox(height: 8),
-              Text(
-                '${_game.label} with Bao!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+              FadeTransition(
+                opacity: _entrance,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, -0.15),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: _entrance,
+                      curve: Curves.easeOutCubic,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        margin: const EdgeInsets.only(right: 10),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _game.accent.withValues(alpha: 0.85),
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: TTShadows.soft,
+                        ),
+                        child: Icon(
+                          _game.icon,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      Text(
+                        '${_game.label} with Bao!',
+                        style: TTTypography.headline(color: TTColors.darkBrown)
+                            .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               Expanded(
-                child: AnimatedBuilder(
-                  animation: _float,
-                  builder: (context, _) {
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        final bob = math.sin(_float.value * math.pi * 2) * 12;
-                        final x = constraints.maxWidth / 2 - bubbleSize / 2;
-                        return Stack(
-                          children: [
-                            Positioned(
-                              left: x,
-                              bottom: 48 + bob,
-                              child: BounceButton(
-                                onPressed:
-                                    _actionInProgress ? null : _tapBubble,
-                                enabled: !_actionInProgress,
-                                semanticLabel: _game.label,
-                                child: PlayGameBubble(
-                                  icon: _game.icon,
-                                  accent: _game.accent,
-                                  done: false,
-                                  playing: _actionInProgress,
-                                  highlighted: due,
-                                  badgeCount: _dueCount,
+                child: FadeTransition(
+                  opacity: _entrance,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.92, end: 1.0).animate(
+                      CurvedAnimation(
+                        parent: _entrance,
+                        curve: Curves.easeOutBack,
+                      ),
+                    ),
+                    child: AnimatedBuilder(
+                      animation: Listenable.merge([_float, _orbit, _burst]),
+                      builder: (context, _) {
+                        return LayoutBuilder(
+                          builder: (context, constraints) {
+                            final bob =
+                                math.sin(_float.value * math.pi * 2) * 12;
+                            final x =
+                                constraints.maxWidth / 2 - bubbleSize / 2;
+                            final liftT = ((bob + 12) / 24).clamp(0.0, 1.0);
+                            return Stack(
+                              alignment: Alignment.bottomCenter,
+                              children: [
+                                Positioned(
+                                  bottom: 40,
+                                  child: Container(
+                                    width: bubbleSize *
+                                        (0.75 - liftT * 0.18),
+                                    height: 16 - liftT * 6,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: TTColors.darkBrown.withValues(
+                                        alpha: 0.22 - liftT * 0.10,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ],
+                                Positioned(
+                                  left: x,
+                                  bottom: 48 + bob,
+                                  child: SizedBox(
+                                    width: bubbleSize,
+                                    height: bubbleSize,
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      alignment: Alignment.center,
+                                      children: [
+                                        if (due && !_actionInProgress)
+                                          ..._orbitSparkles(bubbleSize),
+                                        if (_burst.isAnimating)
+                                          ..._burstWidgets(bubbleSize),
+                                        BounceButton(
+                                          onPressed: _actionInProgress
+                                              ? null
+                                              : _tapBubble,
+                                          enabled: !_actionInProgress,
+                                          semanticLabel: _game.label,
+                                          child: PlayGameBubble(
+                                            icon: _game.icon,
+                                            accent: _game.accent,
+                                            done: false,
+                                            playing: _actionInProgress,
+                                            highlighted: due,
+                                            badgeCount: _dueCount,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 8,
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 250),
+                                    opacity: _actionInProgress ? 0.0 : 0.65 +
+                                        math.sin(_float.value * math.pi * 2) *
+                                            0.2,
+                                    child: Text(
+                                      due
+                                          ? 'Tap Bao — it\'s ${_game.label.toLowerCase()} time!'
+                                          : 'Tap Bao to play ${_game.label.toLowerCase()}!',
+                                      style: TTTypography.caption(
+                                        color: TTColors.darkBrown,
+                                      ).copyWith(fontWeight: FontWeight.w700),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         );
                       },
-                    );
-                  },
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -353,6 +499,76 @@ class _PlayGameScreenState extends State<PlayGameScreen>
       ),
     );
   }
+
+  List<Widget> _orbitSparkles(double bubbleSize) {
+    const count = 3;
+    final radius = bubbleSize / 2 + 14;
+    return [
+      for (var i = 0; i < count; i++)
+        Builder(
+          builder: (context) {
+            final angle =
+                _orbit.value * math.pi * 2 + (i / count) * math.pi * 2;
+            return Transform.translate(
+              offset: Offset(
+                math.cos(angle) * radius,
+                math.sin(angle) * radius * 0.6,
+              ),
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                size: 12,
+                color: _game.accent.withValues(alpha: 0.85),
+              ),
+            );
+          },
+        ),
+    ];
+  }
+
+  List<Widget> _burstWidgets(double bubbleSize) {
+    final t = Curves.easeOut.transform(_burst.value);
+    final fade = (1 - _burst.value).clamp(0.0, 1.0);
+    return [
+      for (final p in _burstParticles)
+        Transform.translate(
+          offset: Offset(
+            math.cos(p.angle) * p.distance * t,
+            math.sin(p.angle) * p.distance * t,
+          ),
+          child: Opacity(
+            opacity: fade,
+            child: p.isStar
+                ? Icon(
+                    Icons.star_rounded,
+                    size: p.size + 4,
+                    color: TTColors.golden,
+                  )
+                : Container(
+                    width: p.size,
+                    height: p.size,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _game.accent,
+                    ),
+                  ),
+          ),
+        ),
+    ];
+  }
+}
+
+class _BurstParticle {
+  const _BurstParticle({
+    required this.angle,
+    required this.distance,
+    required this.size,
+    required this.isStar,
+  });
+
+  final double angle;
+  final double distance;
+  final double size;
+  final bool isStar;
 }
 
 class _PlayGameVideoLayer extends StatelessWidget {
@@ -462,24 +678,32 @@ class PlayGameBubble extends StatelessWidget {
               Positioned(
                 right: -2,
                 top: -2,
-                child: Container(
-                  constraints: const BoxConstraints(minWidth: 26),
-                  height: 26,
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: TTColors.ribbonOrange,
-                    borderRadius: BorderRadius.circular(13),
-                    border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: TTShadows.soft,
-                  ),
-                  child: Text(
-                    badgeCount > 9 ? '9+' : '$badgeCount',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      height: 1,
+                child: TweenAnimationBuilder<double>(
+                  key: ValueKey(badgeCount),
+                  tween: Tween(begin: 0.4, end: 1.0),
+                  duration: const Duration(milliseconds: 280),
+                  curve: Curves.easeOutBack,
+                  builder: (context, scale, child) =>
+                      Transform.scale(scale: scale, child: child),
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 26),
+                    height: 26,
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: TTColors.ribbonOrange,
+                      borderRadius: BorderRadius.circular(13),
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: TTShadows.soft,
+                    ),
+                    child: Text(
+                      badgeCount > 9 ? '9+' : '$badgeCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        height: 1,
+                      ),
                     ),
                   ),
                 ),
