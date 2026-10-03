@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/activity_schedule.dart';
+import '../../models/bao_scenarios.dart';
 import '../../models/character_bg_videos.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
@@ -46,6 +47,8 @@ class _ChoresScreenState extends State<ChoresScreen> {
     _ChoreItem('Get Dressed', Icons.checkroom_rounded, Color(0xFFF48FB1)),
     _ChoreItem('Wear Shoes', Icons.snowshoeing_rounded, Color(0xFFA5D6A7)),
     _ChoreItem('School', Icons.school_rounded, Color(0xFF81C784)),
+    _ChoreItem('Drawing Time', Icons.brush_rounded, Color(0xFFFFB74D)),
+    _ChoreItem('Rainy Day', Icons.umbrella_rounded, Color(0xFF64B5F6)),
   ];
 
   /// Schedule id per tray index (null = no due badge).
@@ -58,6 +61,8 @@ class _ChoresScreenState extends State<ChoresScreen> {
     ActivityId.getDressed,
     ActivityId.wearShoes,
     null, // school
+    null, // drawing time
+    null, // rainy day
   ];
 
   final Set<int> _done = {};
@@ -163,6 +168,17 @@ class _ChoresScreenState extends State<ChoresScreen> {
       if (!mounted || completed != true) return;
       setState(() => _done.add(index));
       await ScheduleStore.markCompleted(ActivityId.wearShoes);
+    } else if (index == 8) {
+      if (_done.contains(index)) return;
+      final completed =
+          await context.push<bool>(BaoScenarios.drawingTime.route);
+      if (!mounted || completed != true) return;
+      setState(() => _done.add(index));
+    } else if (index == 9) {
+      if (_done.contains(index)) return;
+      final completed = await context.push<bool>(BaoScenarios.rainyDay.route);
+      if (!mounted || completed != true) return;
+      setState(() => _done.add(index));
     } else {
       if (_done.contains(index)) return;
       setState(() => _done.add(index));
