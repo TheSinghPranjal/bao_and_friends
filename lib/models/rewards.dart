@@ -1,3 +1,5 @@
+import 'learn_topics.dart';
+
 /// Positive-only needs language. Never hungry / sad / crying / sick / angry.
 enum NeedState {
   ready('Ready', 'Bao is ready for this!'),
@@ -446,6 +448,20 @@ abstract final class LearnNumbersRules {
       stars: 3,
       magicBeans: 1,
       message: 'Amazing! You learned 1 to 20 with Bao!',
+    );
+  }
+}
+
+/// Word Time lesson complete (same star reward as Alphabet / Numbers).
+abstract final class LearnWordTimeRules {
+  static RewardResult rewardForComplete() {
+    final lessons = WordTimeLessons.lessons;
+    final first = lessons.first.word;
+    final last = lessons.last.word;
+    return RewardResult(
+      stars: 3,
+      magicBeans: 1,
+      message: 'Amazing! You learned $first to $last with Bao!',
     );
   }
 }

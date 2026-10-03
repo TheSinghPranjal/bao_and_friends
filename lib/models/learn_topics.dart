@@ -38,12 +38,13 @@ abstract final class LearnTopics {
       accent: Color(0xFFFFB74D),
       route: '/learn/numbers',
     ),
-    // LearnTopicSpec(
-    //   id: 'words',
-    //   label: 'Words',
-    //   icon: Icons.spellcheck_rounded,
-    //   accent: Color(0xFF81C784),
-    // ),
+    LearnTopicSpec(
+      id: 'words',
+      label: 'Word Time',
+      icon: Icons.spellcheck_rounded,
+      accent: Color(0xFF81C784),
+      route: '/learn/words',
+    ),
     // LearnTopicSpec(
     //   id: 'colours',
     //   label: 'Colours',
@@ -174,4 +175,49 @@ abstract final class NumberVideos {
     '11 – 15',
     '16 – 20',
   ];
+}
+
+/// One 3-letter Word Time lesson.
+///
+/// Add a word by appending a [WordTimeLesson] to [WordTimeLessons.lessons].
+class WordTimeLesson {
+  const WordTimeLesson({
+    required this.word,
+    required this.asset,
+  });
+
+  final String word;
+
+  /// Full Flutter asset path for this word's looping lesson.
+  final String asset;
+
+  String get fileName {
+    final slash = asset.lastIndexOf('/');
+    return slash < 0 ? asset : asset.substring(slash + 1);
+  }
+}
+
+/// Ordered Word Time catalog. Each clip is one seamless loop:
+/// Bao points to each letter, says the whole word, then shows the object.
+abstract final class WordTimeLessons {
+  static const screenTitle = "BAO'S WORD TIME 🐼";
+
+  static const folder = 'assets/videos/learn/words';
+
+  static const lessons = <WordTimeLesson>[
+    WordTimeLesson(word: 'CAT', asset: '$folder/word_cat.mp4'),
+    WordTimeLesson(word: 'DOG', asset: '$folder/word_dog.mp4'),
+    WordTimeLesson(word: 'MAT', asset: '$folder/word_mat.mp4'),
+    WordTimeLesson(word: 'BAT', asset: '$folder/word_bat.mp4'),
+    WordTimeLesson(word: 'RAT', asset: '$folder/word_rat.mp4'),
+    WordTimeLesson(word: 'HAT', asset: '$folder/word_hat.mp4'),
+    WordTimeLesson(word: 'SUN', asset: '$folder/word_sun.mp4'),
+    WordTimeLesson(word: 'CUP', asset: '$folder/word_cup.mp4'),
+    WordTimeLesson(word: 'BUS', asset: '$folder/word_bus.mp4'),
+    WordTimeLesson(word: 'PEN', asset: '$folder/word_pen.mp4'),
+  ];
+
+  static List<String> get fileNames => [
+        for (final lesson in lessons) lesson.fileName,
+      ];
 }
