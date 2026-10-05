@@ -94,6 +94,9 @@ flutter:
     - assets/videos/bao_character_screen_bg_video_list/bao_character_screen_bg_making_pancakes_video.mp4
     - assets/videos/wake/bao_sleeping_video.mp4
     - assets/videos/wake/bao_waking_up_video.mp4
+    # Drawing Time + Rainy Day step clips (mp4s added when generated).
+    - assets/videos/drawing_time/
+    - assets/videos/rainy_day/
     - assets/videos/feed/water/bao_not_drinking_water.mp4
     - assets/videos/feed/water/bao_drinking_water.mp4
     - assets/videos/feed/milk/bao_not_drinking_milk_video.mp4

@@ -2,26 +2,35 @@
 
 A new Flutter project.
 
-## Learn — Word Time
+## Scenario videos
 
-Bao's 3-letter word lesson. It is the **Word Time** topic on the Learn tray.
+Drawing Time (`/drawing-time`) and Rainy Day Routine (`/rainy-day`) are five-step Bao activities opened from the Chores tray. Each step has a looping muted idle clip and a muted action clip. The mp4s are generated separately — do not commit placeholders. Missing files fall back to the scenario color and Bao's face.
 
-- Route: `/learn/words`
+`assets/videos/drawing_time/`
 
-Each word has one full-screen portrait (9:16) looping lesson under `assets/videos/learn/words/`. The clips are not in the repo. Add these filenames when the videos are ready:
+- `step_1_get_supplies.mp4`
+- `step_1_get_supplies_action.mp4`
+- `step_2_set_up_table.mp4`
+- `step_2_set_up_table_action.mp4`
+- `step_3_draw_picture.mp4`
+- `step_3_draw_picture_action.mp4`
+- `step_4_add_details.mp4`
+- `step_4_add_details_action.mp4`
+- `step_5_display_artwork.mp4`
+- `step_5_display_artwork_action.mp4`
 
-- `word_cat.mp4` — CAT
-- `word_dog.mp4` — DOG
-- `word_mat.mp4` — MAT
-- `word_bat.mp4` — BAT
-- `word_rat.mp4` — RAT
-- `word_hat.mp4` — HAT
-- `word_sun.mp4` — SUN
-- `word_cup.mp4` — CUP
-- `word_bus.mp4` — BUS
-- `word_pen.mp4` — PEN
+`assets/videos/rainy_day/`
 
-If a file is missing, the lesson shows a fallback color, Bao's face, and the word. Do not commit placeholder videos.
+- `step_1_look_outside.mp4`
+- `step_1_look_outside_action.mp4`
+- `step_2_get_raincoat.mp4`
+- `step_2_get_raincoat_action.mp4`
+- `step_3_put_on_boots.mp4`
+- `step_3_put_on_boots_action.mp4`
+- `step_4_take_umbrella.mp4`
+- `step_4_take_umbrella_action.mp4`
+- `step_5_ready_for_rain.mp4`
+- `step_5_ready_for_rain_action.mp4`
 
 ## Getting Started
 

@@ -406,6 +406,58 @@ abstract final class GetDressedRules {
   }
 }
 
+/// Drawing Time — five steps from supplies to the fridge.
+abstract final class DrawingTimeRules {
+  static const int maxSteps = 5;
+  static const int stepsForFullReward = 5;
+
+  /// 1 step → 1 star. All five steps → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForSteps(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Help Bao draw a picture!');
+    }
+    if (completed >= stepsForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao\'s drawing is on the fridge!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Nice start! One star for you!'
+          : 'Great drawing! Keep going!',
+    );
+  }
+}
+
+/// Rainy Day Routine — five steps from the window to the door.
+abstract final class RainyDayRules {
+  static const int maxSteps = 5;
+  static const int stepsForFullReward = 5;
+
+  /// 1 step → 1 star. All five steps → 3 stars + 1 Magic Bean.
+  static RewardResult rewardForSteps(int completed) {
+    if (completed <= 0) {
+      return const RewardResult(message: 'Help Bao get ready for the rain!');
+    }
+    if (completed >= stepsForFullReward) {
+      return const RewardResult(
+        stars: 3,
+        magicBeans: 1,
+        message: 'Amazing! Bao is ready for the rain!',
+      );
+    }
+    return RewardResult(
+      stars: 1,
+      message: completed == 1
+          ? 'Nice start! One star for you!'
+          : 'Great getting ready! Keep going!',
+    );
+  }
+}
+
 /// Wear Shoes — shoes then bag (2 steps).
 abstract final class WearShoesRules {
   static const int maxSteps = 2;
