@@ -1,7 +1,9 @@
 import 'package:go_router/go_router.dart';
 
+import '../models/bao_scenarios.dart';
 import '../screens/character_home/character_home_screen.dart';
 import '../screens/character_selection/character_selection_screen.dart';
+import '../screens/chores/bao_scenario_screen.dart';
 import '../screens/chores/chores_screen.dart';
 import '../screens/chores/bath_screen.dart';
 import '../screens/chores/brush_teeth_screen.dart';
@@ -140,6 +142,18 @@ GoRouter createAppRouter({bool skipSplash = false}) {
       GoRoute(
         path: '/wake-up',
         builder: (context, state) => const WakeUpScreen(),
+      ),
+      GoRoute(
+        path: BaoScenarios.drawingTime.route,
+        builder: (context, state) => const BaoScenarioScreen(
+          scenarioId: BaoScenarios.drawingTimeId,
+        ),
+      ),
+      GoRoute(
+        path: BaoScenarios.rainyDay.route,
+        builder: (context, state) => const BaoScenarioScreen(
+          scenarioId: BaoScenarios.rainyDayId,
+        ),
       ),
       GoRoute(
         path: '/drink',
