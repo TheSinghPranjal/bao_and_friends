@@ -19,6 +19,7 @@ import '../screens/feed/feed_screen.dart';
 import '../screens/learn/alphabet_screen.dart';
 import '../screens/learn/learn_screen.dart';
 import '../screens/learn/numbers_screen.dart';
+import '../screens/learn/word_time_screen.dart';
 import '../screens/play/play_game_screen.dart';
 import '../screens/play/play_screen.dart';
 import '../screens/premium/premium_screen.dart';
@@ -61,6 +62,10 @@ GoRouter createAppRouter({bool skipSplash = false}) {
       GoRoute(
         path: '/learn/numbers',
         builder: (context, state) => const NumbersScreen(),
+      ),
+      GoRoute(
+        path: '/learn/words',
+        builder: (context, state) => const WordTimeScreen(),
       ),
       GoRoute(
         path: '/feed',
