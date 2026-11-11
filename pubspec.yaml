@@ -154,6 +154,7 @@ flutter:
     - assets/videos/play/skipping/bao_doing_skipping_video.mp4
     - assets/videos/bao_not_feeding.mp4
     - assets/images/logo_splash_screen.png
+    - assets/branding/lazy_bear_club.png
     - assets/images/character_select_bg.png
     - assets/images/bao_reward_celebrate.png
     - assets/images/characters/
