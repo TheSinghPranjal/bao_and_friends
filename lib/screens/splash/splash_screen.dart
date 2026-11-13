@@ -7,7 +7,8 @@ import '../../theme/tt_typography.dart';
 
 /// Screen 1 — Splash.
 /// Full-screen looping background video (unblurred, unfiltered) +
-/// top-pinned brand logo + bottom-pinned "Loading..." progress bar.
+/// top-pinned brand logo + bottom-pinned "Loading..." progress bar,
+/// with the Lazy Bear Club studio byline just above the loader.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -19,6 +20,7 @@ class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   static const _videoAsset = 'assets/videos/splash_screen_bg_video.mp4';
   static const _logoAsset = 'assets/images/logo_splash_screen.png';
+  static const _studioIconAsset = 'assets/branding/lazy_bear_club.png';
   static const _minDisplay = Duration(milliseconds: 3200);
 
   VideoPlayerController? _video;
@@ -180,7 +182,16 @@ class _SplashScreenState extends State<SplashScreen>
                           // ---- MIDDLE: transparent, video shows through ----
                           const Spacer(),
 
-                          // ---- BOTTOM: "Loading..." + progress bar ----
+                          // ---- BOTTOM: studio byline, then "Loading..." ----
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: Opacity(
+                              opacity: _loaderFade.value * (1 - bloom),
+                              child: const _StudioByline(
+                                iconAsset: _studioIconAsset,
+                              ),
+                            ),
+                          ),
                           Padding(
                             padding: const EdgeInsets.only(bottom: 28),
                             child: Opacity(
@@ -245,6 +256,86 @@ class _SplashBackground extends StatelessWidget {
     }
 
     return const ColoredBox(color: TTColors.peachSoft);
+  }
+}
+
+/// Studio credit pinned just above the loader: the word "by", then
+/// "The Lazy Bear Club", with the club icon beside the two lines.
+/// A theme-aware chip keeps the type readable over the splash video.
+class _StudioByline extends StatelessWidget {
+  const _StudioByline({required this.iconAsset});
+
+  final String iconAsset;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final foreground = isDark ? TTColors.cream : TTColors.darkBrown;
+    final muted = isDark ? TTColors.peachSoft : TTColors.softBrown;
+    final chip = isDark ? const Color(0xF02A211C) : const Color(0xF2FFFBF5);
+    final border = isDark
+        ? const Color(0x33FFF8F0)
+        : TTColors.peachDeep.withValues(alpha: 0.55);
+
+    return Semantics(
+      container: true,
+      label: 'by The Lazy Bear Club',
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.center,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: chip,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: border),
+            boxShadow: TTShadows.soft,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 6, 14, 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    iconAsset,
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.high,
+                    excludeFromSemantics: true,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'by',
+                      style: TTTypography.caption(color: muted).copyWith(
+                        height: 1.0,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      'The Lazy Bear Club',
+                      maxLines: 1,
+                      style: TTTypography.subtitle(color: foreground).copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
